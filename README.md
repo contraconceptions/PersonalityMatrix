@@ -55,7 +55,9 @@ guidance for that customer type, and `missingNodes()` in `src/lib/matrix.ts` lis
 
 ## Offline suggestions (Phase 2)
 
-What the agent types is matched against example customer lines in with a small on-device model (all-MiniLM-L6-v2 via Transformers.js), running in a Web Worker.
-Nothing is sent anywhere or stored: the worker refuses any fetch outside the extension itself.
-To improve accuracy, add more real (anonymized) example lines per customer type and run .
- checks accuracy on held-out lines the examples don't contain.
+What the agent types is compared with example customer lines in `src/data/customerExamples.json`
+using a small on-device model (all-MiniLM-L6-v2 via Transformers.js) that runs in a Web Worker.
+Nothing the agent types is sent anywhere or stored, and the worker refuses any fetch from outside
+the extension itself. To improve accuracy, add more real (anonymized) example lines for each
+customer type and run `npm run embed`. `tests/semantic.test.ts` measures accuracy on held-out lines
+that aren't in the examples.
