@@ -1,0 +1,56 @@
+[
+  {
+    "id": "sage",
+    "name": "The Sage",
+    "alias": "The Expert",
+    "description": "Analytical, truth-seeking, highly technical; relies on logic.",
+    "defaultEgoState": "Adult",
+    "strengths": "Solving complex technical problems.",
+    "risk": "Can come across as cold, robotic, or dismissive to emotional customers."
+  },
+  {
+    "id": "caregiver",
+    "name": "The Caregiver",
+    "alias": "The Harmonizer",
+    "description": "Nurturing, warm, selfless, deeply empathetic.",
+    "defaultEgoState": "Nurturing Parent",
+    "strengths": "De-escalating distressed customers.",
+    "risk": "May over-apologize, lose authority, or burn out facing demanding customers."
+  },
+  {
+    "id": "everyman",
+    "name": "The Everyman",
+    "alias": "The Peer",
+    "description": "Friendly, relatable, casual, grounded.",
+    "defaultEgoState": "Free Child",
+    "strengths": "Rapid rapport with expressive and cooperative customers.",
+    "risk": "May lack the formal authority demanding or analytical customers expect."
+  },
+  {
+    "id": "fixer",
+    "name": "The Fixer",
+    "alias": "The Commander",
+    "description": "Assertive, efficient, focused on swift resolution.",
+    "defaultEgoState": "Adult",
+    "strengths": "Highly effective with analytical and hesitant customers.",
+    "risk": "Can rush distressed customers, leaving them feeling unheard."
+  },
+  {
+    "id": "innovator",
+    "name": "The Innovator",
+    "alias": "The Rebel",
+    "description": "Imaginative and original; looks for out-of-the-box workarounds.",
+    "defaultEgoState": "Free Child",
+    "strengths": "Navigating unprecedented issues.",
+    "risk": "May frustrate customers who want strict adherence to documented policy."
+  },
+  {
+    "id": "diplomat",
+    "name": "The Diplomat",
+    "alias": "The Mediator",
+    "description": "Balanced, tactful, skilled at emotional alignment.",
+    "defaultEgoState": "Adult",
+    "strengths": "Adapts to nearly any customer profile.",
+    "risk": "High burnout risk from constant deep acting; can let calls drift."
+  }
+]

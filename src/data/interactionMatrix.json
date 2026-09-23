@@ -1,0 +1,50 @@
+[
+  {
+    "agentId": "sage",
+    "customerId": "distressed",
+    "risk": "Cold logic (Adult) alienates the emotional customer (Adapted Child). Facts before validation create a crossed transaction.",
+    "relateStrategy": "Force empathy before logic. Validate the emotion first.",
+    "phrasesToUse": ["I realize this whole thing has been frustrating for you."],
+    "phrasesToAvoid": ["The data shows...", "Calm down."]
+  },
+  {
+    "agentId": "caregiver",
+    "customerId": "demanding",
+    "risk": "May fold under Critical Parent pressure, over-apologizing and losing institutional authority.",
+    "relateStrategy": "Shift consciously to the Adult state. Assert boundaries with structure.",
+    "phrasesToUse": ["Here's what we know. Here's what we've done. Here's what's next."],
+    "phrasesToAvoid": ["I apologize for any inconvenience.", "Let me try...", "Maybe...", "I think..."]
+  },
+  {
+    "agentId": "fixer",
+    "customerId": "hesitant",
+    "risk": "Drive for immediate resolution overwhelms the customer, causing them to freeze or abandon the call.",
+    "relateStrategy": "Use assertive optioning and gentle, collaborative questions.",
+    "phrasesToUse": ["Are you able to...?", "What I suggest is..."],
+    "phrasesToAvoid": ["I need you to give me your serial number now."]
+  },
+  {
+    "agentId": "everyman",
+    "customerId": "analytical",
+    "risk": "Casual, conversational tone reads as unprofessional or untrustworthy to a customer who wants precision.",
+    "relateStrategy": "Drop conversational filler. Speak in exact numbers, metrics, and policies. Outline precise timelines.",
+    "phrasesToUse": ["I will make sure this gets resolved by taking [X] steps."],
+    "phrasesToAvoid": ["Let me try to fix this."]
+  },
+  {
+    "agentId": "innovator",
+    "customerId": "demanding",
+    "risk": "Unstructured, rule-bending approach violates the customer's need for order and perceived justice.",
+    "relateStrategy": "Frame the workaround as a special exception honoring their loyalty. State it firmly.",
+    "phrasesToUse": ["I can give you a $50 credit."],
+    "phrasesToAvoid": ["The most I can offer is..."]
+  },
+  {
+    "agentId": "diplomat",
+    "customerId": "expressive",
+    "risk": "Tangential stories derail the call and inflate Average Handle Time.",
+    "relateStrategy": "Acknowledge the story warmly (Nurturing Parent), then pivot to the task (Adult).",
+    "phrasesToUse": ["That sounds like a great trip. Let's get this account secured so you can enjoy the rest of it."],
+    "phrasesToAvoid": ["Open-ended personal questions"]
+  }
+]

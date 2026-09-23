@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "PersonalityMatrix",
+  "version": "0.1.0",
+  "description": "Offline agent-assist: match your communication style to the customer in front of you.",
+  "permissions": ["storage", "sidePanel"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "action": { "default_title": "Open PersonalityMatrix" },
+  "icons": { "128": "icons/icon128.png" }
+}

@@ -1,0 +1,69 @@
+# PersonalityMatrix — Build Plan
+
+An offline, local-first Chrome (MV3) side-panel extension for contact-center agents.
+The agent sets their own archetype once; during a call they tap the customer's archetype and
+instantly get **Risk / Relate / Avoid** guidance from a 6×6 (36-node) interaction matrix.
+
+Research: `docs/research/`.
+
+## Decisions (defaults — revisit any of them)
+
+| Area | Choice | Why |
+|---|---|---|
+| Platform | Chrome MV3 extension, **Side Panel** UI | Sits beside the CRM without covering it; persists across tabs |
+| Stack | Vite + React 18 + TypeScript | Research suggests React components; typed data catches matrix gaps |
+| Data | Static JSON bundled in the extension | Offline, zero latency, MV3 forbids remote code |
+| State | `chrome.storage.local` (falls back to `localStorage` in `npm run dev`) | Survives service-worker shutdown |
+| Tests | Vitest | Validates matrix integrity + lookup logic |
+| Privacy | No network calls, no customer PII stored | Only agentId + UI prefs are persisted |
+
+## Guidance model
+
+Guidance for a pair (agent, customer) is layered so every one of the 36 nodes shows something useful
+even before all nodes are hand-written:
+
+1. **Customer baseline** (`customerProfiles.json`) — relate strategy, phrases to use/avoid for that customer type.
+2. **Matrix node override** (`interactionMatrix.json`) — agent-specific risk, strategy, and phrases.
+3. **Global trigger list** (`phrases.json`) — always-avoid phrases with a replacement for each.
+
+`resolveGuidance()` merges these (node > baseline > global), de-duplicates phrases, and flags
+whether the node is *authored* or *fallback*, so the UI can show a "generic guidance" badge.
+
+## Phases
+
+### Phase 0 — Scaffold ✅ (this commit)
+- Project structure, manifest, build, side panel shell, service worker
+- Data files: 6 agents, 6 customers, 6 authored matrix nodes, global triggers
+- Components: `AgentSetup`, `CustomerQuickId`, `MatrixOutput`
+- Tests for data integrity and guidance resolution
+
+### Phase 1 — MVP content & UX
+- [ ] Author the remaining 30 matrix nodes (content work — the core IP of the product)
+- [ ] Agent self-assessment quiz (8–12 questions → scores per agent archetype) in `AgentSetup`
+- [ ] Customer quick-ID aids: show identifier cues / example utterances on each button
+- [ ] Keyboard shortcuts (1–6 to pick customer, `Esc` to reset) via `chrome.commands`
+- [ ] "Copy phrase" button on each Relate phrase
+- [ ] Ego-state visual: agent state → customer state, flag crossed vs complementary transaction
+- [ ] Load unpacked in Chrome and pilot with a few agents
+
+### Phase 2 — Local semantic search
+- [ ] Free-text box: agent types what the customer said → suggest archetype + nearest phrases
+- [ ] Transformers.js + quantized `all-MiniLM-L6-v2`, bundled (no remote model fetch)
+- [ ] Build-time script that pre-computes embeddings for all phrases/cues → JSON/IndexedDB
+- [ ] Run inference in an offscreen document / worker so the panel stays responsive
+
+### Phase 3 — Admin & analytics (local)
+- [ ] Import/export custom matrix JSON (supervisors tune content per org/brand)
+- [ ] Local-only usage log (which pairs come up, which phrases copied) → CSV export for QA coaching
+- [ ] Supervisor-set brand voice overrides
+
+### Phase 4 — Exploratory
+- [ ] WASM speech-emotion recognition (arousal/valence) to *suggest* the customer archetype
+- [ ] Needs mic/tab-audio consent, legal review (call recording laws) — gate behind policy
+
+## Open questions for the product owner
+1. Target deployment: Chrome Web Store, or enterprise-managed install only?
+2. Should agents be able to re-take / change their archetype freely, or supervisor-locked?
+3. Does one agent archetype ever shift mid-call (e.g. Diplomat choosing a mode), or is it fixed?
+4. Who authors the remaining 30 nodes — you, a subject-matter expert, or draft-with-AI-then-review?
+5. Branding / visual identity for the panel?

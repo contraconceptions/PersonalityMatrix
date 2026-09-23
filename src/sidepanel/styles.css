@@ -1,0 +1,90 @@
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --text: #1c1c1a;
+  --muted: #6b6b66;
+  --border: #e2e2dc;
+  --accent: #2f5bd3;
+  --risk: #b4540a;
+  --relate: #1f7a4d;
+  --avoid: #b3261e;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161615;
+    --surface: #1f1f1d;
+    --text: #ececea;
+    --muted: #a0a09a;
+    --border: #33332f;
+    --accent: #7d9bf0;
+    --risk: #f0a060;
+    --relate: #5fcf97;
+    --avoid: #f2837b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.app { padding: 12px; display: grid; gap: 14px; }
+h1 { font-size: 18px; margin: 0; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 8px; }
+h3 { font-size: 13px; margin: 0 0 4px; }
+ul { margin: 0; padding-left: 18px; }
+
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.hint { color: var(--muted); margin: 0; }
+.eyebrow { display: block; font-size: 11px; color: var(--muted); }
+
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.link { background: none; border: 0; color: var(--accent); padding: 0; justify-self: start; }
+
+.app-header { display: flex; justify-content: space-between; align-items: center; }
+
+.card-list { list-style: none; padding: 0; display: grid; gap: 8px; }
+.card {
+  width: 100%; text-align: left; display: grid; gap: 2px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px;
+}
+.card:hover { border-color: var(--accent); }
+
+.quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.chip {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 4px;
+}
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.output { display: grid; gap: 10px; }
+.output-head { display: flex; align-items: center; gap: 8px; }
+.output-head h2 { margin: 0; color: var(--text); text-transform: none; font-size: 16px; letter-spacing: 0; }
+.badge { font-size: 11px; border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; color: var(--muted); }
+
+.transaction { margin: 0; font-size: 12px; }
+.transaction.crossed strong { color: var(--risk); }
+.transaction.complementary strong { color: var(--relate); }
+
+.cues { font-size: 12px; color: var(--muted); }
+
+.block { background: var(--surface); border: 1px solid var(--border); border-left-width: 4px; border-radius: 6px; padding: 8px 10px; }
+.block p { margin: 0 0 4px; }
+.risk { border-left-color: var(--risk); }
+.risk h3 { color: var(--risk); }
+.relate { border-left-color: var(--relate); }
+.relate h3 { color: var(--relate); }
+.avoid { border-left-color: var(--avoid); }
+.avoid h3 { color: var(--avoid); }
+
+details { margin-top: 6px; }
+summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+.triggers { list-style: none; padding: 0; display: grid; gap: 6px; margin-top: 6px; }
+.triggers li { display: grid; }

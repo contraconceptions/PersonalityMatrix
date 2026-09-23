@@ -1,0 +1,32 @@
+[
+  {
+    "phrase": "Calm down.",
+    "why": "A Critical Parent command that invalidates the customer's feelings; turns frustration into anger.",
+    "instead": "I realize this whole thing has been frustrating for you."
+  },
+  {
+    "phrase": "That's our policy. / I can't do that.",
+    "why": "Hides behind rules, removes the customer's autonomy, invites escalation.",
+    "instead": "While I can't do X, what I can do is Y."
+  },
+  {
+    "phrase": "That's not my responsibility. / I don't know.",
+    "why": "Projects incompetence and leaves the customer feeling unsupported.",
+    "instead": "Let me find that out for you. Here's what I'll do next."
+  },
+  {
+    "phrase": "Please hold. (no context)",
+    "why": "Removes the human connection without consent; creates anxiety about how long and why.",
+    "instead": "May I place you on a brief hold for about two minutes while I check your account?"
+  },
+  {
+    "phrase": "You're mistaken. / You misheard me.",
+    "why": "Attacks the customer's competence and turns problem-solving into a battle of egos.",
+    "instead": "Let me make sure I explained that clearly."
+  },
+  {
+    "phrase": "I apologize for any inconvenience.",
+    "why": "Sounds robotic and generic; \"any\" implies you don't understand their specific pain.",
+    "instead": "I'm sorry your order arrived late. I know you were counting on it."
+  }
+]
