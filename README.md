@@ -41,6 +41,7 @@ tests/                      Vitest
 
 ## Authoring matrix content
 
-Add entries to `src/data/interactionMatrix.json`. All 36 pairings are authored (see `docs/research/matrix-methodology.md`). A pairing with no entry would fall back to
-general guidance for that customer type. The UI marks these with a "General guidance" badge.
-`missingNodes()` in `src/lib/matrix.ts` lists the pairings that still need entries.
+All 36 pairings live in `src/data/interactionMatrix.json`. Each one is tagged with `fit`
+(strong / neutral / watch) and `basis` (research / derived). The method and sources are in
+`docs/research/matrix-methodology.md`. If a pairing is ever removed, the panel falls back to general
+guidance for that customer type, and `missingNodes()` in `src/lib/matrix.ts` lists the gaps.

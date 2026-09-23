@@ -63,7 +63,7 @@ whether the node is *authored* or *fallback*, so the UI can show a "generic guid
 - [ ] Needs mic/tab-audio consent, legal review (call recording laws) — gate behind policy
 
 ## Product decisions (2026-09-23)
-1. **Distribution:** private client use and demos only. No Chrome Web Store, so the store-policy and review work is out of scope. Share it as a zipped  loaded unpacked, or through enterprise policy.
+1. **Distribution:** private client use and demos only. No Chrome Web Store, so the store-policy and review work is out of scope. Share it as a zipped `dist/` loaded unpacked, or through enterprise policy.
 2. **Agent archetype:** agents can change it freely (the "Change" link in the header).
-3. **Matrix content:** all 36 nodes are authored. 6 come from the research and 30 are derived (see ). Have client team leads review them before real use.
+3. **Matrix content:** all 36 nodes are authored. 6 come from the research and 30 are derived (see `docs/research/matrix-methodology.md`). Have client team leads review them before real use.
 4. **Branding:** simple, light, professional and clutter-free. Light theme only, soft tinted guidance blocks, one accent color, and secondary info tucked behind a disclosure.
