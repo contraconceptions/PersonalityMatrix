@@ -1,0 +1,103 @@
+[
+  {
+    "id": "q1",
+    "prompt": "A customer starts shouting about a billing error. Your first instinct is to…",
+    "options": [
+      { "text": "Find exactly what went wrong in the account before saying much.", "scores": { "sage": 2, "fixer": 1 } },
+      { "text": "Reassure them that I'm here and I'll look after them.", "scores": { "caregiver": 2, "diplomat": 1 } },
+      { "text": "Tell them what I'm going to do right now to fix it.", "scores": { "fixer": 2, "sage": 1 } },
+      { "text": "Keep it human: \"Ugh, that's the worst. Let's sort it out.\"", "scores": { "everyman": 2, "innovator": 1 } }
+    ]
+  },
+  {
+    "id": "q2",
+    "prompt": "Your teammates would most likely describe you as…",
+    "options": [
+      { "text": "The one who knows the system inside out.", "scores": { "sage": 2 } },
+      { "text": "Calm and fair. I can talk to anyone.", "scores": { "diplomat": 2, "everyman": 1 } },
+      { "text": "Resourceful. I find a way when there isn't one.", "scores": { "innovator": 2, "fixer": 1 } },
+      { "text": "Warm. People come to me when they're having a rough day.", "scores": { "caregiver": 2, "everyman": 1 } }
+    ]
+  },
+  {
+    "id": "q3",
+    "prompt": "A policy blocks what the customer is asking for. You…",
+    "options": [
+      { "text": "Explain the policy clearly and why it exists.", "scores": { "sage": 2, "diplomat": 1 } },
+      { "text": "Look for a creative workaround within the rules.", "scores": { "innovator": 2 } },
+      { "text": "Offer the best alternative and move forward quickly.", "scores": { "fixer": 2, "innovator": 1 } },
+      { "text": "Acknowledge how disappointing that is before offering options.", "scores": { "caregiver": 2, "diplomat": 1 } }
+    ]
+  },
+  {
+    "id": "q4",
+    "prompt": "The most satisfying part of a call for you is…",
+    "options": [
+      { "text": "Cracking a tricky problem nobody else could.", "scores": { "innovator": 2, "sage": 1 } },
+      { "text": "Hearing the relief in the customer's voice.", "scores": { "caregiver": 2 } },
+      { "text": "Closing it fast and clean, with nothing left open.", "scores": { "fixer": 2 } },
+      { "text": "A good laugh and a genuine connection.", "scores": { "everyman": 2 } }
+    ]
+  },
+  {
+    "id": "q5",
+    "prompt": "Which kind of call drains you the most?",
+    "options": [
+      { "text": "Long emotional calls with no clear problem to solve.", "scores": { "sage": 2, "fixer": 1 } },
+      { "text": "Hostile customers who make it personal.", "scores": { "caregiver": 2, "everyman": 1 } },
+      { "text": "Rigid, by-the-book calls with no room to improvise.", "scores": { "innovator": 2, "everyman": 1 } },
+      { "text": "Switching moods constantly from one call to the next.", "scores": { "diplomat": 2 } }
+    ]
+  },
+  {
+    "id": "q6",
+    "prompt": "A customer is telling a long story that has little to do with the issue. You…",
+    "options": [
+      { "text": "Enjoy it and chat along. Rapport matters.", "scores": { "everyman": 2, "caregiver": 1 } },
+      { "text": "Listen politely, then gently steer back.", "scores": { "diplomat": 2 } },
+      { "text": "Redirect at the first natural pause.", "scores": { "fixer": 2, "sage": 1 } },
+      { "text": "Use something from the story to find a new angle on the fix.", "scores": { "innovator": 2, "diplomat": 1 } }
+    ]
+  },
+  {
+    "id": "q7",
+    "prompt": "When you explain something complicated, you tend to…",
+    "options": [
+      { "text": "Walk through it step by step with the exact details.", "scores": { "sage": 2 } },
+      { "text": "Use an everyday analogy they can relate to.", "scores": { "everyman": 2, "innovator": 1 } },
+      { "text": "Give the short version and the one action they need to take.", "scores": { "fixer": 2 } },
+      { "text": "Check in on how they're feeling about it as I go.", "scores": { "caregiver": 2, "diplomat": 1 } }
+    ]
+  },
+  {
+    "id": "q8",
+    "prompt": "Under pressure (long queue, back-to-back tough calls), you tend to…",
+    "options": [
+      { "text": "Get more precise and procedural.", "scores": { "sage": 2 } },
+      { "text": "Speed up and get more direct.", "scores": { "fixer": 2 } },
+      { "text": "Apologize more and try to keep everyone happy.", "scores": { "caregiver": 2, "diplomat": 1 } },
+      { "text": "Stay even-keeled on the call, but feel it afterwards.", "scores": { "diplomat": 2 } }
+    ]
+  },
+  {
+    "id": "q9",
+    "prompt": "A customer asks about something you've never seen before. You…",
+    "options": [
+      { "text": "Research it thoroughly before giving an answer.", "scores": { "sage": 2 } },
+      { "text": "Try a few ideas. Something will work.", "scores": { "innovator": 2 } },
+      { "text": "Say, \"Good question, let's figure it out together.\"", "scores": { "everyman": 2, "diplomat": 1 } },
+      { "text": "Stay calm, reassure them, and bring in the right person.", "scores": { "diplomat": 2, "fixer": 1 } }
+    ]
+  },
+  {
+    "id": "q10",
+    "prompt": "The feedback you hear most often from supervisors is…",
+    "options": [
+      { "text": "\"Great accuracy. Could show a bit more warmth.\"", "scores": { "sage": 2 } },
+      { "text": "\"Customers love you. Watch your handle time.\"", "scores": { "everyman": 2, "caregiver": 1 } },
+      { "text": "\"Very efficient. Slow down with upset callers.\"", "scores": { "fixer": 2 } },
+      { "text": "\"Creative solutions. Stick closer to process.\"", "scores": { "innovator": 2 } },
+      { "text": "\"You handle anyone. Make sure you take your breaks.\"", "scores": { "diplomat": 2 } }
+    ]
+  }
+]

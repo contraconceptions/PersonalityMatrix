@@ -39,7 +39,7 @@ whether the node is *authored* or *fallback*, so the UI can show a "generic guid
 
 ### Phase 1 — MVP content & UX
 - [x] Author all 36 matrix nodes (30 derived — review with client SMEs)
-- [ ] Agent self-assessment quiz (8–12 questions → scores per agent archetype) in `AgentSetup`
+- [x] Agent self-assessment quiz: 10 scenario questions, normalized scoring, result + runner-up (`src/data/quiz.json`)
 - [ ] Customer quick-ID aids: show identifier cues / example utterances on each button
 - [ ] Keyboard shortcuts (1–6 to pick customer, `Esc` to reset) via `chrome.commands`
 - [ ] "Copy phrase" button on each Relate phrase
