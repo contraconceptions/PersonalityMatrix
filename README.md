@@ -37,7 +37,7 @@ For a client, send the zip from `npm run package`. They unzip it and load the fo
 public/manifest.json        MV3 manifest (copied to dist/)
 sidepanel.html              Side panel entry
 src/background/             Service worker (ephemeral — no in-memory state)
-src/data/*.json             Archetypes, 36-node matrix (partially authored), trigger phrases
+src/data/*.json             Archetypes, 36-node matrix, quiz, trigger phrases
 src/lib/matrix.ts           resolveGuidance(): node > customer baseline > global triggers
 src/lib/storage.ts          chrome.storage.local with localStorage fallback
 src/sidepanel/components/   AgentSetup, CustomerQuickId, MatrixOutput
