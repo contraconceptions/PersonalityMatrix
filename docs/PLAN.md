@@ -26,8 +26,8 @@ even before all nodes are hand-written:
 2. **Matrix node override** (`interactionMatrix.json`) — agent-specific risk, strategy, and phrases.
 3. **Global trigger list** (`phrases.json`) — always-avoid phrases with a replacement for each.
 
-`resolveGuidance()` merges these (node > baseline > global), de-duplicates phrases, and flags
-whether the node is *authored* or *fallback*, so the UI can show a "generic guidance" badge.
+`resolveGuidance()` merges these (node > baseline > global) and de-duplicates phrases. All 36 nodes
+are authored now; the fallback only matters if a node is removed.
 
 ## Phases
 
