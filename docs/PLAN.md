@@ -4,7 +4,8 @@ An offline, local-first Chrome (MV3) side-panel extension for contact-center age
 The agent sets their own archetype once; during a call they tap the customer's archetype and
 instantly get **Risk / Relate / Avoid** guidance from a 6×6 (36-node) interaction matrix.
 
-Research: `docs/research/`.
+Research: `docs/research/`. **Paused 2026-09-23. Start with [`NEXT-STEPS.md`](NEXT-STEPS.md)**: it covers the current state, gotchas,
+and detailed plans for every open item.
 
 ## Decisions (defaults — revisit any of them)
 

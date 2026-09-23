@@ -9,7 +9,8 @@ that pairing:
 - **Avoid:** phrases that tend to escalate the call.
 
 The guidance draws on the Process Communication Model, Transactional Analysis and brand archetypes.
-See `docs/PLAN.md` for the roadmap and `docs/research/` for the source material.
+See `docs/PLAN.md` for the roadmap, **`docs/NEXT-STEPS.md` for where to resume** (state, gotchas,
+detailed plans for the open items), and `docs/research/` for the source material.
 
 ## Develop
 
