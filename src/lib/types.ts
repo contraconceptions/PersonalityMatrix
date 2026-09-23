@@ -49,8 +49,8 @@ export interface MatrixNode {
   agentId: AgentId;
   customerId: CustomerId;
   fit: Fit;
-  /** "research" = from the source report; "derived" = extrapolated (see docs/research/matrix-methodology.md). */
-  basis: "research" | "derived";
+  /** "research" = from the source report; "derived" = extrapolated (see docs/research/matrix-methodology.md); "custom" = imported by a supervisor. */
+  basis: "research" | "derived" | "custom";
   risk: string;
   relateStrategy: string;
   phrasesToUse: string[];
@@ -61,6 +61,22 @@ export interface TriggerPhrase {
   phrase: string;
   why: string;
   instead: string;
+}
+
+/** Supervisor-set company voice, applied to all guidance text. */
+export interface BrandVoice {
+  /** Word swaps, e.g. { from: "customer", to: "patient" }. Whole-word, case-aware. */
+  terms: Array<{ from: string; to: string }>;
+  /** Company-specific "never say" phrases, shown alongside the built-in triggers. */
+  extraTriggers: TriggerPhrase[];
+}
+
+/** Everything the guidance is built from. Agent archetypes are fixed; the rest is editable. */
+export interface Content {
+  customerProfiles: CustomerProfile[];
+  interactionMatrix: MatrixNode[];
+  triggers: TriggerPhrase[];
+  brandVoice: BrandVoice;
 }
 
 export interface Guidance {

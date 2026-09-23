@@ -5,6 +5,7 @@ import type { Fit, Guidance } from "../../lib/types";
 interface Props {
   guidance: Guidance;
   onReset: () => void;
+  onCopy?: (phrase: string) => void;
 }
 
 const FIT_LABEL: Record<Fit, string> = {
@@ -13,7 +14,7 @@ const FIT_LABEL: Record<Fit, string> = {
   watch: "Watch closely",
 };
 
-export default function MatrixOutput({ guidance: g, onReset }: Props) {
+export default function MatrixOutput({ guidance: g, onReset, onCopy }: Props) {
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,7 +24,10 @@ export default function MatrixOutput({ guidance: g, onReset }: Props) {
   }, [copied]);
 
   const copy = async (phrase: string) => {
-    if (await copyText(phrase)) setCopied(phrase);
+    if (await copyText(phrase)) {
+      setCopied(phrase);
+      onCopy?.(phrase);
+    }
   };
 
   return (

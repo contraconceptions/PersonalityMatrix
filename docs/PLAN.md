@@ -54,10 +54,11 @@ are authored now; the fallback only matters if a node is removed.
 - [ ] Grow `customerExamples.json` with real (anonymized) client call lines, then `npm run embed`
 
 ### Phase 3 — Admin & analytics (local)
-- [ ] Demo mode: scripted sample calls that walk through a few pairings for client presentations
-- [ ] Import/export custom matrix JSON (supervisors tune content per org/brand)
-- [ ] Local-only usage log (which pairs come up, which phrases copied) → CSV export for QA coaching
-- [ ] Supervisor-set brand voice overrides
+- [x] Demo mode: 5 scripted calls (`src/data/demoScenarios.json`) played through the real suggestion model, with a coaching note per call; → / ← / Esc; never saves the agent or logs usage. Start from onboarding ("Watch a demo") or Settings
+- [x] Import/export guidance JSON (Settings): validated with readable errors; sections in a file replace the current ones; reset to built-in
+- [x] Local-only usage log: customer-type picks (click / key / suggestion) and copied phrases, never customer text; summary + CSV export (formula-injection safe); capped at 5,000 events
+- [x] Brand voice: whole-word, case-aware term swaps (e.g. customer → patient) applied to all guidance and copied phrases, plus company "never say" phrases
+- [ ] Optional: PIN-lock Settings if agents shouldn't edit content (currently open to everyone on the device)
 
 ### Phase 4 — Exploratory
 - [ ] WASM speech-emotion recognition (arousal/valence) to *suggest* the customer archetype

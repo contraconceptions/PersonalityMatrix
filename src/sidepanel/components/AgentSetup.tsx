@@ -6,8 +6,13 @@ import AgentQuiz from "./AgentQuiz";
 
 type Mode = "intro" | "quiz" | "result" | "pick";
 
-// Onboarding: take the self-assessment quiz, or pick a style directly.
-export default function AgentSetup({ onSelect }: { onSelect: (id: AgentId) => void }) {
+interface Props {
+  onSelect: (id: AgentId) => void;
+  onStartDemo: () => void;
+}
+
+// Onboarding: take the self-assessment quiz, pick a style directly, or watch the demo.
+export default function AgentSetup({ onSelect, onStartDemo }: Props) {
   const [mode, setMode] = useState<Mode>("intro");
   const [ranked, setRanked] = useState<QuizResult[]>([]);
 
@@ -97,6 +102,9 @@ export default function AgentSetup({ onSelect }: { onSelect: (id: AgentId) => vo
         </button>
         <button className="link" onClick={() => setMode("pick")}>
           I already know my style
+        </button>
+        <button className="link" onClick={onStartDemo}>
+          Watch a demo
         </button>
       </div>
     </main>

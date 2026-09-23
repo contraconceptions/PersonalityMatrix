@@ -4,6 +4,7 @@ import { embed, onStatus, warmUp, type ModelStatus } from "../../lib/embedClient
 import { getCustomer } from "../../lib/matrix";
 import { classify, type Classification, type EmbeddingIndex } from "../../lib/similarity";
 import type { CustomerId } from "../../lib/types";
+import { useContent } from "../ContentContext";
 
 const index = indexData as EmbeddingIndex;
 const MIN_CHARS = 12;
@@ -12,11 +13,14 @@ const DEBOUNCE_MS = 350;
 interface Props {
   onSuggest: (id: CustomerId | null) => void;
   onAccept: (id: CustomerId) => void;
+  /** Demo mode: type this text into the box, as if the agent were typing it live. */
+  presetText?: string;
 }
 
 // Free-text box: the agent types or pastes what the customer said and gets a suggested
 // archetype. Runs fully on-device; the text is never stored or sent anywhere.
-export default function DescribeCustomer({ onSuggest, onAccept }: Props) {
+export default function DescribeCustomer({ onSuggest, onAccept, presetText }: Props) {
+  const { content } = useContent();
   const [text, setText] = useState("");
   const [status, setStatus] = useState<ModelStatus>("idle");
   const [result, setResult] = useState<Classification | null>(null);
@@ -26,6 +30,20 @@ export default function DescribeCustomer({ onSuggest, onAccept }: Props) {
     warmUp();
     return onStatus(setStatus);
   }, []);
+
+  useEffect(() => {
+    if (presetText === undefined) return;
+    setText("");
+    // Progress by elapsed time, not tick count, so it finishes on time even if timers are throttled.
+    const start = performance.now();
+    const TYPE_MS = 1500;
+    const id = setInterval(() => {
+      const n = Math.ceil(((performance.now() - start) / TYPE_MS) * presetText.length);
+      setText(presetText.slice(0, n));
+      if (n >= presetText.length) clearInterval(id);
+    }, 28);
+    return () => clearInterval(id);
+  }, [presetText]);
 
   useEffect(() => {
     const trimmed = text.trim();
@@ -79,13 +97,13 @@ export default function DescribeCustomer({ onSuggest, onAccept }: Props) {
           <>
             Sounds{" "}
             <button className="suggest" onClick={() => accept(top.customerId)} title={`Similar to: “${top.example}”`}>
-              {getCustomer(top.customerId)?.name.replace(/^The /, "")}
+              {getCustomer(top.customerId, content)?.name.replace(/^The /, "")}
             </button>
             {alt && (
               <>
                 {" "}or{" "}
                 <button className="suggest alt" onClick={() => accept(alt.customerId)} title={`Similar to: “${alt.example}”`}>
-                  {getCustomer(alt.customerId)?.name.replace(/^The /, "")}
+                  {getCustomer(alt.customerId, content)?.name.replace(/^The /, "")}
                 </button>
               </>
             )}

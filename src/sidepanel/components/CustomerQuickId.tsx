@@ -1,5 +1,5 @@
-import { customers } from "../../lib/matrix";
 import type { CustomerId } from "../../lib/types";
+import { useContent } from "../ContentContext";
 
 interface Props {
   selected: CustomerId | null;
@@ -10,6 +10,7 @@ interface Props {
 
 // Quick-select used in the first 15-30 seconds of a call. Keys 1–6 match button order.
 export default function CustomerQuickId({ selected, suggested, onSelect }: Props) {
+  const customers = useContent().content.customerProfiles;
   return (
     <section aria-label="Customer type">
       <h2>Customer sounds…</h2>

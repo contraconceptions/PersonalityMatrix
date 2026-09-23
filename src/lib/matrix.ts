@@ -2,9 +2,11 @@ import agentData from "../data/agentProfiles.json";
 import customerData from "../data/customerProfiles.json";
 import matrixData from "../data/interactionMatrix.json";
 import phraseData from "../data/phrases.json";
+import { applyBrandVoice } from "./brandVoice";
 import type {
   AgentId,
   AgentProfile,
+  Content,
   CustomerId,
   CustomerProfile,
   EgoState,
@@ -17,6 +19,14 @@ export const agents = agentData as AgentProfile[];
 export const customers = customerData as CustomerProfile[];
 export const matrix = matrixData as MatrixNode[];
 export const triggers = phraseData as TriggerPhrase[];
+
+/** The built-in guidance. Supervisors can override parts of it (see content.ts). */
+export const defaultContent: Content = {
+  customerProfiles: customers,
+  interactionMatrix: matrix,
+  triggers,
+  brandVoice: { terms: [], extraTriggers: [] },
+};
 
 // Ego-state pairs where a stimulus from one side naturally gets the expected
 // response from the other (TA "complementary transaction"). Anything else is
@@ -37,12 +47,16 @@ export function getAgent(id: AgentId): AgentProfile | undefined {
   return agents.find((a) => a.id === id);
 }
 
-export function getCustomer(id: CustomerId): CustomerProfile | undefined {
-  return customers.find((c) => c.id === id);
+export function getCustomer(id: CustomerId, content: Content = defaultContent): CustomerProfile | undefined {
+  return content.customerProfiles.find((c) => c.id === id);
 }
 
-export function getNode(agentId: AgentId, customerId: CustomerId): MatrixNode | undefined {
-  return matrix.find((n) => n.agentId === agentId && n.customerId === customerId);
+export function getNode(
+  agentId: AgentId,
+  customerId: CustomerId,
+  content: Content = defaultContent,
+): MatrixNode | undefined {
+  return content.interactionMatrix.find((n) => n.agentId === agentId && n.customerId === customerId);
 }
 
 function dedupe(items: string[]): string[] {
@@ -56,35 +70,42 @@ function dedupe(items: string[]): string[] {
 }
 
 /**
- * Merge guidance for a pair: authored matrix node > customer baseline > global triggers.
- * Always returns something usable, even for nodes that haven't been authored yet.
+ * Merge guidance for a pair: authored matrix node > customer baseline > global triggers,
+ * then apply the brand voice. Always returns something usable, even for unauthored nodes.
  */
-export function resolveGuidance(agentId: AgentId, customerId: CustomerId): Guidance | undefined {
+export function resolveGuidance(
+  agentId: AgentId,
+  customerId: CustomerId,
+  content: Content = defaultContent,
+): Guidance | undefined {
   const agent = getAgent(agentId);
-  const customer = getCustomer(customerId);
+  const customer = getCustomer(customerId, content);
   if (!agent || !customer) return undefined;
 
-  const node = getNode(agentId, customerId);
+  const node = getNode(agentId, customerId, content);
 
-  return {
-    agent,
-    customer,
-    authored: Boolean(node),
-    fit: node?.fit ?? "neutral",
-    risk: node?.risk ?? agent.risk,
-    relateStrategy: node?.relateStrategy ?? customer.relateStrategy,
-    phrasesToUse: dedupe([...(node?.phrasesToUse ?? []), ...customer.phrasesToUse]),
-    phrasesToAvoid: dedupe([...(node?.phrasesToAvoid ?? []), ...customer.phrasesToAvoid]),
-    triggers,
-    transaction: transactionType(agent.defaultEgoState, customer.egoState),
-  };
+  return applyBrandVoice(
+    {
+      agent,
+      customer,
+      authored: Boolean(node),
+      fit: node?.fit ?? "neutral",
+      risk: node?.risk ?? agent.risk,
+      relateStrategy: node?.relateStrategy ?? customer.relateStrategy,
+      phrasesToUse: dedupe([...(node?.phrasesToUse ?? []), ...customer.phrasesToUse]),
+      phrasesToAvoid: dedupe([...(node?.phrasesToAvoid ?? []), ...customer.phrasesToAvoid]),
+      triggers: content.triggers,
+      transaction: transactionType(agent.defaultEgoState, customer.egoState),
+    },
+    content.brandVoice,
+  );
 }
 
 /** Pairs that still fall back to baseline guidance — the authoring backlog. */
-export function missingNodes(): Array<{ agentId: AgentId; customerId: CustomerId }> {
+export function missingNodes(content: Content = defaultContent): Array<{ agentId: AgentId; customerId: CustomerId }> {
   return agents.flatMap((a) =>
-    customers
-      .filter((c) => !getNode(a.id, c.id))
+    content.customerProfiles
+      .filter((c) => !getNode(a.id, c.id, content))
       .map((c) => ({ agentId: a.id, customerId: c.id })),
   );
 }

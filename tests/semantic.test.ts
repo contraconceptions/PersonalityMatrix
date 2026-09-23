@@ -90,4 +90,14 @@ describe.skipIf(!modelPresent)("classify (real model, held-out lines)", () => {
     expect(top1 / heldOut.length).toBeGreaterThanOrEqual(0.8);
     expect(top2 / heldOut.length).toBeGreaterThanOrEqual(0.95);
   }, 60_000);
+
+  it("suggests the intended customer type for every demo scenario, with a clear margin", async () => {
+    const { scenarios } = await import("../src/lib/demo");
+    const vecs = await embed(scenarios.map((s) => s.customerLine));
+    scenarios.forEach((s, i) => {
+      const r = classify(vecs[i], idx);
+      expect(r.ranked[0].customerId, s.id).toBe(s.expectedCustomerId);
+      expect(r.confidence, s.id).toBe("clear");
+    });
+  }, 60_000);
 });

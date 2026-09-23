@@ -31,7 +31,13 @@ npm run package    # build + zip to release/personality-matrix-<version>.zip for
 
 For a client, send the zip from `npm run package`. They unzip it and load the folder the same way.
 
-**In the panel:** type or paste what the customer said to get a suggested type (Enter accepts it); keys `1`–`6` pick the customer type, `Esc` clears, and clicking a Relate phrase copies it.
+**In the panel:** type or paste what the customer said to get a suggested type (Enter accepts it). Keys `1`–`6` pick the customer type, `Esc` clears, and clicking a Relate phrase copies it.
+
+**Settings** (link in the header):
+- **Demo:** five scripted sample calls for client presentations. You can also start it from the first-run screen ("Watch a demo"). Use `→` / `←` to step through and `Esc` to exit. Demos don't change the saved agent and aren't logged.
+- **Brand voice:** word swaps (e.g. customer → patient) and company "never say" phrases.
+- **Guidance content:** export the full guidance as JSON, edit it, and import it back. Imports are validated first. Reset returns to the built-in guidance.
+- **Usage on this device:** which customer types come up and which phrases get copied, never what customers said. Export it as CSV for QA coaching, or clear it.
 
 ## Layout
 

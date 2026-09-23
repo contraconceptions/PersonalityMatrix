@@ -1,0 +1,42 @@
+[
+  {
+    "id": "billing-blowup",
+    "title": "The billing blow-up",
+    "agentId": "caregiver",
+    "customerLine": "This is the third time you've overcharged me. I've been with you eleven years and I want a supervisor, now.",
+    "expectedCustomerId": "demanding",
+    "coachNote": "A Caregiver's instinct is to apologize again and again, which loses authority with a Demanding caller. The guidance moves the agent into calm structure: what we know, what we've done, what's next."
+  },
+  {
+    "id": "locked-out",
+    "title": "Locked out before rent day",
+    "agentId": "fixer",
+    "customerLine": "I can't get into my account and my rent is due tomorrow. I don't know what to do, I'm really scared.",
+    "expectedCustomerId": "distressed",
+    "coachNote": "A Fixer wants to jump straight to the account number. For a Distressed caller that feels like being ignored. The guidance slows the first 30 seconds: restate, validate, then one step at a time."
+  },
+  {
+    "id": "which-plan",
+    "title": "Which plan is right?",
+    "agentId": "sage",
+    "customerLine": "I'm just not sure which plan is right for me. Can you go over the options again?",
+    "expectedCustomerId": "hesitant",
+    "coachNote": "A Sage naturally lays out every option with pros and cons, which freezes a Hesitant caller. The guidance narrows it to one clear recommendation and reassures them it can be changed later."
+  },
+  {
+    "id": "storyteller",
+    "title": "The storyteller",
+    "agentId": "diplomat",
+    "customerLine": "Oh my gosh, you won't believe my week! So we were in Hawaii for my sister's wedding, and my card got declined right in the middle of the luau.",
+    "expectedCustomerId": "expressive",
+    "coachNote": "A Diplomat can let a warm, chatty caller run the whole call. The guidance keeps the rapport but uses a friendly bridge back to the task, protecting handle time."
+  },
+  {
+    "id": "fine-print",
+    "title": "The fine print",
+    "agentId": "everyman",
+    "customerLine": "Which clause covers the early termination fee, and how exactly is it calculated?",
+    "expectedCustomerId": "analytical",
+    "coachNote": "An Everyman's casual tone can read as unprofessional to an Analytical caller. The guidance drops the filler and speaks in exact numbers, policies and timelines."
+  }
+]
