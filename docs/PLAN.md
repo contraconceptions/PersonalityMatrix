@@ -40,11 +40,11 @@ are authored now; the fallback only matters if a node is removed.
 ### Phase 1 — MVP content & UX
 - [x] Author all 36 matrix nodes (30 derived — review with client SMEs)
 - [x] Agent self-assessment quiz: 10 scenario questions, normalized scoring, result + runner-up (`src/data/quiz.json`)
-- [ ] Customer quick-ID aids: show identifier cues / example utterances on each button
-- [ ] Keyboard shortcuts (1–6 to pick customer, `Esc` to reset) via `chrome.commands`
-- [ ] "Copy phrase" button on each Relate phrase
-- [ ] Ego-state visual: agent state → customer state, flag crossed vs complementary transaction
-- [ ] Load unpacked in Chrome and pilot with a few agents
+- [x] Customer quick-ID aids: short cue on each button, full identifiers on hover
+- [x] Keyboard shortcuts: 1–6 pick customer, Esc clears (in-panel; global `chrome.commands` hotkeys are a possible later add)
+- [x] Click-to-copy on each Relate phrase
+- [x] Ego-state line: You <state> → Them <state>, crossed vs in sync
+- [ ] Load unpacked in Chrome and pilot with a few agents (`npm run package` → `release/*.zip`)
 
 ### Phase 2 — Local semantic search
 - [ ] Free-text box: agent types what the customer said → suggest archetype + nearest phrases

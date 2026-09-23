@@ -2,6 +2,7 @@
   {
     "id": "analytical",
     "name": "The Analytical",
+    "cue": "Wants specifics",
     "identifiers": [
       "Asks specific policy/timeline questions",
       "Calm, neutral tone",
@@ -23,6 +24,7 @@
   {
     "id": "distressed",
     "name": "The Distressed",
+    "cue": "Anxious, unsure",
     "identifiers": [
       "Overwhelmed or anxious",
       "Passive, seeks confirmation",
@@ -43,6 +45,7 @@
   {
     "id": "demanding",
     "name": "The Demanding",
+    "cue": "Absolutes, blame",
     "identifiers": [
       "Rigid, authoritative",
       "Uses absolutes: \"always\", \"never\"",
@@ -64,6 +67,7 @@
   {
     "id": "hesitant",
     "name": "The Hesitant",
+    "cue": "Can't decide",
     "identifiers": [
       "Slow to decide",
       "Re-asks about the same options",
@@ -84,6 +88,7 @@
   {
     "id": "expressive",
     "name": "The Expressive",
+    "cue": "Chatty, stories",
     "identifiers": [
       "Talkative, tells stories",
       "Easily sidetracked",
@@ -103,6 +108,7 @@
   {
     "id": "cooperative",
     "name": "The Cooperative",
+    "cue": "Clear and easy",
     "identifiers": [
       "Clear needs",
       "Provides info readily",

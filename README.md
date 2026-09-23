@@ -18,6 +18,7 @@ npm install
 npm run dev        # opens the side panel UI in a normal browser tab (localStorage fallback)
 npm test           # data-integrity + guidance logic tests
 npm run build      # type-check + build the extension into dist/
+npm run package    # build + zip to release/personality-matrix-<version>.zip for clients
 ```
 
 ## Load in Chrome
@@ -25,6 +26,10 @@ npm run build      # type-check + build the extension into dist/
 1. `npm run build`
 2. Go to `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, choose `dist/`.
 3. Click the toolbar icon to open the side panel.
+
+For a client, send the zip from `npm run package`. They unzip it and load the folder the same way.
+
+**In the panel:** keys `1`–`6` pick the customer type, `Esc` clears, and clicking a Relate phrase copies it.
 
 ## Layout
 

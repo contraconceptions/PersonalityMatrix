@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAgent, resolveGuidance } from "../lib/matrix";
+import { shortcutFor } from "../lib/shortcuts";
 import { loadAgentId, saveAgentId } from "../lib/storage";
 import type { AgentId, CustomerId } from "../lib/types";
 import AgentSetup from "./components/AgentSetup";
@@ -17,6 +18,24 @@ export default function App() {
       setLoaded(true);
     });
   }, []);
+
+  useEffect(() => {
+    if (!agentId) return;
+    const onKey = (e: KeyboardEvent) => {
+      const action = shortcutFor({
+        key: e.key,
+        ctrlKey: e.ctrlKey,
+        altKey: e.altKey,
+        metaKey: e.metaKey,
+        targetTag: (e.target as HTMLElement | null)?.tagName,
+      });
+      if (!action) return;
+      e.preventDefault();
+      setCustomerId(action.type === "select" ? action.customerId : null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [agentId]);
 
   const chooseAgent = (id: AgentId | null) => {
     setAgentId(id);
@@ -47,7 +66,9 @@ export default function App() {
       {guidance ? (
         <MatrixOutput guidance={guidance} onReset={() => setCustomerId(null)} />
       ) : (
-        <p className="hint">Pick the customer type you're hearing to get guidance.</p>
+        <p className="hint">
+          Pick the customer type you're hearing, or press <kbd>1</kbd>–<kbd>6</kbd>.
+        </p>
       )}
     </main>
   );

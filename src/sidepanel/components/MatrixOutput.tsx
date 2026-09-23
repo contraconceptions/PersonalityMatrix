@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { copyText } from "../../lib/clipboard";
 import type { Fit, Guidance } from "../../lib/types";
 
 interface Props {
@@ -12,6 +14,18 @@ const FIT_LABEL: Record<Fit, string> = {
 };
 
 export default function MatrixOutput({ guidance: g, onReset }: Props) {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(null), 1500);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  const copy = async (phrase: string) => {
+    if (await copyText(phrase)) setCopied(phrase);
+  };
+
   return (
     <section className="output" aria-live="polite">
       <div className="output-head">
@@ -19,10 +33,17 @@ export default function MatrixOutput({ guidance: g, onReset }: Props) {
         <span className={`fit fit-${g.fit}`}>{FIT_LABEL[g.fit]}</span>
       </div>
 
-      <p className="meta">
-        {g.customer.channel}
-        {g.transaction === "crossed" && <> · Steer toward Adult</>}
-      </p>
+      <div className="meta">
+        <p>{g.customer.channel}</p>
+        <p>
+          You <strong>{g.agent.defaultEgoState}</strong> → Them <strong>{g.customer.egoState}</strong>
+          {g.transaction === "crossed" ? (
+            <span className="crossed"> · Crossed, steer toward Adult</span>
+          ) : (
+            <span className="complementary"> · In sync</span>
+          )}
+        </p>
+      </div>
 
       <div className="block risk">
         <h3>Risk</h3>
@@ -32,9 +53,16 @@ export default function MatrixOutput({ guidance: g, onReset }: Props) {
       <div className="block relate">
         <h3>Relate</h3>
         <p>{g.relateStrategy}</p>
-        <ul>
+        <ul className="phrases">
           {g.phrasesToUse.map((p) => (
-            <li key={p}>“{p}”</li>
+            <li key={p}>
+              <button className="phrase" onClick={() => copy(p)} title="Click to copy">
+                <span>“{p}”</span>
+                <span className="copy-state" aria-live="polite">
+                  {copied === p ? "Copied" : "Copy"}
+                </span>
+              </button>
+            </li>
           ))}
         </ul>
       </div>
@@ -62,7 +90,7 @@ export default function MatrixOutput({ guidance: g, onReset }: Props) {
       </details>
 
       <button className="link" onClick={onReset}>
-        Clear
+        Clear <kbd>Esc</kbd>
       </button>
     </section>
   );

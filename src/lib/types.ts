@@ -28,6 +28,8 @@ export interface AgentProfile {
 export interface CustomerProfile {
   id: CustomerId;
   name: string;
+  /** Two-or-three-word cue shown on the quick-pick button. */
+  cue: string;
   /** Cues the agent listens for in the first 15-30 seconds. */
   identifiers: string[];
   egoState: EgoState;
