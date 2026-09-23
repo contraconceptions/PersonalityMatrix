@@ -70,6 +70,7 @@ export function resolveGuidance(agentId: AgentId, customerId: CustomerId): Guida
     agent,
     customer,
     authored: Boolean(node),
+    fit: node?.fit ?? "neutral",
     risk: node?.risk ?? agent.risk,
     relateStrategy: node?.relateStrategy ?? customer.relateStrategy,
     phrasesToUse: dedupe([...(node?.phrasesToUse ?? []), ...customer.phrasesToUse]),

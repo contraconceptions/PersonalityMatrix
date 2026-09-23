@@ -32,15 +32,23 @@ export interface CustomerProfile {
   identifiers: string[];
   egoState: EgoState;
   pcmType?: string;
+  /** PCM communication channel that best reaches this customer. */
+  channel: string;
   /** Baseline guidance used when no agent-specific matrix node exists. */
   relateStrategy: string;
   phrasesToUse: string[];
   phrasesToAvoid: string[];
 }
 
+/** How naturally the agent's style suits this customer. */
+export type Fit = "strong" | "neutral" | "watch";
+
 export interface MatrixNode {
   agentId: AgentId;
   customerId: CustomerId;
+  fit: Fit;
+  /** "research" = from the source report; "derived" = extrapolated (see docs/research/matrix-methodology.md). */
+  basis: "research" | "derived";
   risk: string;
   relateStrategy: string;
   phrasesToUse: string[];
@@ -58,6 +66,7 @@ export interface Guidance {
   customer: CustomerProfile;
   /** True when a hand-authored matrix node exists for this pair. */
   authored: boolean;
+  fit: Fit;
   /** Agent-specific risk; falls back to the agent's general risk. */
   risk: string;
   relateStrategy: string;

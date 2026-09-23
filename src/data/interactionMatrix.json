@@ -1,50 +1,259 @@
 [
   {
-    "agentId": "sage",
-    "customerId": "distressed",
+    "agentId": "sage", "customerId": "analytical", "fit": "strong", "basis": "derived",
+    "risk": "Two Adults can turn the call into an information dump or a technical debate, and jargon can creep in unchecked.",
+    "relateStrategy": "Match their precision. Lead with the answer, then the evidence. Cite the exact policy and timeline, then invite questions.",
+    "phrasesToUse": ["Short answer: yes, by Thursday. Here's why.", "Which detail would you like me to walk through?"],
+    "phrasesToAvoid": ["Trust me, it'll be fine.", "Unexplained internal jargon or acronyms"]
+  },
+  {
+    "agentId": "sage", "customerId": "distressed", "fit": "watch", "basis": "research",
     "risk": "Cold logic (Adult) alienates the emotional customer (Adapted Child). Facts before validation create a crossed transaction.",
     "relateStrategy": "Force empathy before logic. Validate the emotion first.",
     "phrasesToUse": ["I realize this whole thing has been frustrating for you."],
     "phrasesToAvoid": ["The data shows...", "Calm down."]
   },
   {
-    "agentId": "caregiver",
-    "customerId": "demanding",
+    "agentId": "sage", "customerId": "demanding", "fit": "watch", "basis": "derived",
+    "risk": "Correcting a Critical Parent with facts sounds like \"you're wrong\" and starts a battle of egos over who is right.",
+    "relateStrategy": "Acknowledge the principle and their loyalty first. Then present the facts as the plan, not as a rebuttal.",
+    "phrasesToUse": ["You've been with us a long time. You're right to expect better.", "Here's what we know. Here's what we've done. Here's what's next."],
+    "phrasesToAvoid": ["Actually, according to our records...", "You're mistaken."]
+  },
+  {
+    "agentId": "sage", "customerId": "hesitant", "fit": "watch", "basis": "derived",
+    "risk": "Laying out every option with pros and cons overloads a risk-averse customer and causes analysis paralysis.",
+    "relateStrategy": "Narrow to two options, recommend one with a single clear reason, and reassure them it can be changed.",
+    "phrasesToUse": ["Based on what you've told me, I'd recommend this one because...", "If it doesn't suit you, we can change it later."],
+    "phrasesToAvoid": ["There are several options. Let me go through all of them.", "It depends."]
+  },
+  {
+    "agentId": "sage", "customerId": "expressive", "fit": "watch", "basis": "derived",
+    "risk": "Fact-only delivery feels cold to a rapport-seeker, who then talks more to get a connection.",
+    "relateStrategy": "Offer a moment of genuine warmth, then channel their energy into short, simple steps.",
+    "phrasesToUse": ["That sounds like quite a week. Let's make this the easy part of it.", "Here's the quick version, three steps."],
+    "phrasesToAvoid": ["Let's stick to the facts.", "Long technical explanations"]
+  },
+  {
+    "agentId": "sage", "customerId": "cooperative", "fit": "strong", "basis": "derived",
+    "risk": "Low risk. Over-explaining to someone who already understands wastes their time.",
+    "relateStrategy": "Stay efficient. Confirm understanding and next steps, and thank them for their help.",
+    "phrasesToUse": ["Thanks, that saves us time. Here's what happens next.", "Anything else I can clear up while I have you?"],
+    "phrasesToAvoid": ["Re-explaining what they've already confirmed"]
+  },
+
+  {
+    "agentId": "caregiver", "customerId": "analytical", "fit": "watch", "basis": "derived",
+    "risk": "Emotional mirroring reads as filler, or even as patronizing, to someone who only wants accurate answers.",
+    "relateStrategy": "Tone down emotional language. Show care through accuracy, precision, and follow-through.",
+    "phrasesToUse": ["Here are the exact details.", "I'll confirm this in writing so you have the reference number."],
+    "phrasesToAvoid": ["Oh no, I'm so sorry you're going through this!", "I totally understand how you feel."]
+  },
+  {
+    "agentId": "caregiver", "customerId": "distressed", "fit": "strong", "basis": "derived",
+    "risk": "Over-nurturing keeps the customer in the Child state and lengthens the call, and the agent absorbs the distress.",
+    "relateStrategy": "Validate briefly, then give structured steps that move the customer toward Adult. Keep care separate from absorbing their stress.",
+    "phrasesToUse": ["I'm going to take care of this with you. First, ...", "Other customers have felt the same way, and here's what worked."],
+    "phrasesToAvoid": ["Oh, you poor thing.", "Apologizing again and again"]
+  },
+  {
+    "agentId": "caregiver", "customerId": "demanding", "fit": "watch", "basis": "research",
     "risk": "May fold under Critical Parent pressure, over-apologizing and losing institutional authority.",
     "relateStrategy": "Shift consciously to the Adult state. Assert boundaries with structure.",
     "phrasesToUse": ["Here's what we know. Here's what we've done. Here's what's next."],
     "phrasesToAvoid": ["I apologize for any inconvenience.", "Let me try...", "Maybe...", "I think..."]
   },
   {
-    "agentId": "fixer",
-    "customerId": "hesitant",
-    "risk": "Drive for immediate resolution overwhelms the customer, causing them to freeze or abandon the call.",
-    "relateStrategy": "Use assertive optioning and gentle, collaborative questions.",
-    "phrasesToUse": ["Are you able to...?", "What I suggest is..."],
-    "phrasesToAvoid": ["I need you to give me your serial number now."]
+    "agentId": "caregiver", "customerId": "hesitant", "fit": "neutral", "basis": "derived",
+    "risk": "Endless reassurance without a recommendation keeps the customer undecided and the call drags on.",
+    "relateStrategy": "Reassure, then recommend clearly. A gentle directive helps them decide.",
+    "phrasesToUse": ["What I suggest is...", "Many customers in your situation choose this, and it's easy to change later."],
+    "phrasesToAvoid": ["Whatever you feel comfortable with.", "Take all the time you need."]
   },
   {
-    "agentId": "everyman",
-    "customerId": "analytical",
+    "agentId": "caregiver", "customerId": "expressive", "fit": "neutral", "basis": "derived",
+    "risk": "Mutual warmth turns into a long social call and handle time balloons.",
+    "relateStrategy": "Enjoy the connection, but set the agenda early and use friendly bridges back to the task.",
+    "phrasesToUse": ["I love that. Let me get this sorted for you while we chat.", "Before I forget, let me confirm one detail."],
+    "phrasesToAvoid": ["Tell me more about that.", "Open-ended personal questions"]
+  },
+  {
+    "agentId": "caregiver", "customerId": "cooperative", "fit": "strong", "basis": "derived",
+    "risk": "Low risk. Over-apologizing to a customer who doesn't need it.",
+    "relateStrategy": "Stay warm and efficient. Confirm the outcome and show appreciation.",
+    "phrasesToUse": ["Thank you for having that ready. That makes this quick."],
+    "phrasesToAvoid": ["I'm so sorry, so sorry..."]
+  },
+
+  {
+    "agentId": "everyman", "customerId": "analytical", "fit": "watch", "basis": "research",
     "risk": "Casual, conversational tone reads as unprofessional or untrustworthy to a customer who wants precision.",
     "relateStrategy": "Drop conversational filler. Speak in exact numbers, metrics, and policies. Outline precise timelines.",
     "phrasesToUse": ["I will make sure this gets resolved by taking [X] steps."],
     "phrasesToAvoid": ["Let me try to fix this."]
   },
   {
-    "agentId": "innovator",
-    "customerId": "demanding",
+    "agentId": "everyman", "customerId": "distressed", "fit": "neutral", "basis": "derived",
+    "risk": "A casual tone or humor minimizes the worry of a customer who is anxious.",
+    "relateStrategy": "Set the jokes aside and slow down. Use calm, plain language and take visible ownership.",
+    "phrasesToUse": ["I hear you. I'm going to stay with you until this is sorted.", "Here's the first thing we'll do."],
+    "phrasesToAvoid": ["No worries!", "It's not a big deal.", "Happens all the time."]
+  },
+  {
+    "agentId": "everyman", "customerId": "demanding", "fit": "watch", "basis": "derived",
+    "risk": "Informality reads as not taking them seriously, and the customer asks for a manager.",
+    "relateStrategy": "Make your tone more formal and use their name. State clear commitments and take ownership of them.",
+    "phrasesToUse": ["[Name], I'm taking ownership of this.", "Here's exactly what I'm going to do, and by when."],
+    "phrasesToAvoid": ["No problem, buddy.", "I'll see what I can do."]
+  },
+  {
+    "agentId": "everyman", "customerId": "hesitant", "fit": "neutral", "basis": "derived",
+    "risk": "Friendly but non-directive (\"up to you!\") leaves the customer without the guidance they need.",
+    "relateStrategy": "Use the rapport to build trust, then recommend the way a trusted friend would.",
+    "phrasesToUse": ["If I were in your shoes, I'd go with...", "Are you able to try this first? If it doesn't work, we'll switch."],
+    "phrasesToAvoid": ["Up to you!", "Honestly, they're all pretty similar."]
+  },
+  {
+    "agentId": "everyman", "customerId": "expressive", "fit": "strong", "basis": "derived",
+    "risk": "You both love to chat, so handle time balloons and the resolution gets lost.",
+    "relateStrategy": "Enjoy the rapport but keep steering. Set a light agenda and summarize before closing.",
+    "phrasesToUse": ["Okay, let's get you sorted so you can get back to it.", "Quick recap before I let you go..."],
+    "phrasesToAvoid": ["Sharing your own long stories", "Following open-ended tangents"]
+  },
+  {
+    "agentId": "everyman", "customerId": "cooperative", "fit": "strong", "basis": "derived",
+    "risk": "Low risk. An easy, casual flow can skip required verification or recap steps.",
+    "relateStrategy": "Keep the easy flow but still complete every verification, disclosure, and recap.",
+    "phrasesToUse": ["Perfect. I just need to confirm a couple of details for security."],
+    "phrasesToAvoid": ["Skipping the recap because the call is going well"]
+  },
+
+  {
+    "agentId": "fixer", "customerId": "analytical", "fit": "strong", "basis": "derived",
+    "risk": "Speed can skip the explanation, and the Analytical customer won't agree until they understand why.",
+    "relateStrategy": "Give the plan and the reasoning together. Provide reference numbers and exact timelines.",
+    "phrasesToUse": ["Here's the plan, and here's why it works.", "Your reference number is [X]. You'll see the update by [date]."],
+    "phrasesToAvoid": ["Just trust me, this will fix it.", "Don't worry about the details."]
+  },
+  {
+    "agentId": "fixer", "customerId": "distressed", "fit": "watch", "basis": "derived",
+    "risk": "Rushing to resolution leaves the customer feeling unheard, so the anxiety rises.",
+    "relateStrategy": "Slow down for the first 30 seconds: listen fully, restate, validate. Then lead one step at a time.",
+    "phrasesToUse": ["So you're worried because [restate]. Is that right?", "We'll do this one step at a time."],
+    "phrasesToAvoid": ["Okay, what's your account number?", "Let's just get this done."]
+  },
+  {
+    "agentId": "fixer", "customerId": "demanding", "fit": "neutral", "basis": "derived",
+    "risk": "Two directive styles collide into a power struggle, and a blunt refusal sounds like a challenge.",
+    "relateStrategy": "Stay in Adult, not Critical Parent. Acknowledge the principle, then use assertive optioning.",
+    "phrasesToUse": ["While I can't do X, what I can do right now is Y.", "Here's what we know. Here's what we've done. Here's what's next."],
+    "phrasesToAvoid": ["No. That's not possible.", "That's our policy."]
+  },
+  {
+    "agentId": "fixer", "customerId": "hesitant", "fit": "neutral", "basis": "research",
+    "risk": "The drive for immediate resolution overwhelms the customer, who freezes or abandons the call.",
+    "relateStrategy": "Use assertive optioning and gentle, collaborative questions.",
+    "phrasesToUse": ["Are you able to...?", "What I suggest is..."],
+    "phrasesToAvoid": ["I need you to give me your serial number now."]
+  },
+  {
+    "agentId": "fixer", "customerId": "expressive", "fit": "watch", "basis": "derived",
+    "risk": "Cutting off stories feels dismissive, and the customer disengages or pushes back.",
+    "relateStrategy": "Give a brief, warm acknowledgement, then redirect with energy toward a quick win.",
+    "phrasesToUse": ["That's great. Let's get this done so you can get back to it.", "Here's the fastest way to fix this."],
+    "phrasesToAvoid": ["Can we get back on topic?", "Interrupting mid-story"]
+  },
+  {
+    "agentId": "fixer", "customerId": "cooperative", "fit": "strong", "basis": "derived",
+    "risk": "Low risk. The call can feel purely transactional and miss a chance to build loyalty.",
+    "relateStrategy": "Resolve efficiently and add a brief personal close.",
+    "phrasesToUse": ["Done. You're all set. Thanks for making that easy."],
+    "phrasesToAvoid": ["Ending abruptly without confirming everything is resolved"]
+  },
+
+  {
+    "agentId": "innovator", "customerId": "analytical", "fit": "watch", "basis": "derived",
+    "risk": "Workarounds with no documented basis erode trust with a customer who expects strict policy adherence.",
+    "relateStrategy": "Anchor any creative solution in policy and documentation, and explain exactly how it works.",
+    "phrasesToUse": ["This option is covered under [policy]. Here's how it works, step by step.", "I'll send you written confirmation of this."],
+    "phrasesToAvoid": ["Let's try something different and see what happens.", "I'm not sure it's official, but..."]
+  },
+  {
+    "agentId": "innovator", "customerId": "distressed", "fit": "neutral", "basis": "derived",
+    "risk": "Too many ideas and pivots feel chaotic and add to the anxiety.",
+    "relateStrategy": "Pick one solution and present it calmly and simply. Keep the creativity behind the scenes.",
+    "phrasesToUse": ["I've got a solution for this. Here's the first step.", "I'll handle the details on my end."],
+    "phrasesToAvoid": ["We could try this, or maybe this, or...", "Let's experiment."]
+  },
+  {
+    "agentId": "innovator", "customerId": "demanding", "fit": "watch", "basis": "research",
     "risk": "Unstructured, rule-bending approach violates the customer's need for order and perceived justice.",
     "relateStrategy": "Frame the workaround as a special exception honoring their loyalty. State it firmly.",
     "phrasesToUse": ["I can give you a $50 credit."],
     "phrasesToAvoid": ["The most I can offer is..."]
   },
   {
-    "agentId": "diplomat",
-    "customerId": "expressive",
+    "agentId": "innovator", "customerId": "hesitant", "fit": "watch", "basis": "derived",
+    "risk": "Unfamiliar options raise the perceived risk and the customer stalls.",
+    "relateStrategy": "Lead with the proven path. Frame any alternative as safe and reversible.",
+    "phrasesToUse": ["Most customers go with this, and it works well.", "This is easy to undo if you change your mind."],
+    "phrasesToAvoid": ["Here's a creative option nobody usually tries.", "Offering a long list of alternatives"]
+  },
+  {
+    "agentId": "innovator", "customerId": "expressive", "fit": "strong", "basis": "derived",
+    "risk": "Shared energy and tangents make the call long and unfocused, and it's easy to over-promise.",
+    "relateStrategy": "Enjoy the energy, then commit to one idea and confirm exactly what's promised.",
+    "phrasesToUse": ["Love it. Here's what I'll lock in for you today."],
+    "phrasesToAvoid": ["We could maybe do all of that!", "Promising anything you haven't confirmed"]
+  },
+  {
+    "agentId": "innovator", "customerId": "cooperative", "fit": "strong", "basis": "derived",
+    "risk": "Low risk. May overcomplicate a simple request.",
+    "relateStrategy": "Solve the stated need first. Offer extras only if they're relevant.",
+    "phrasesToUse": ["Here's the simplest fix. Want me to also set up [X] so this doesn't happen again?"],
+    "phrasesToAvoid": ["Unrequested workarounds for a simple request"]
+  },
+
+  {
+    "agentId": "diplomat", "customerId": "analytical", "fit": "neutral", "basis": "derived",
+    "risk": "Diplomatic hedging and softeners read as evasive or vague.",
+    "relateStrategy": "Be direct and precise. Keep the tact, but state facts plainly.",
+    "phrasesToUse": ["The answer is no for X and yes for Y. Here's why.", "The exact timeline is [X]."],
+    "phrasesToAvoid": ["It might potentially be possible...", "We'll see what we can do."]
+  },
+  {
+    "agentId": "diplomat", "customerId": "distressed", "fit": "strong", "basis": "derived",
+    "risk": "Deep acting drains the agent, who may start mirroring the customer's anxiety.",
+    "relateStrategy": "Validate, normalize, then move into structure. Take a short reset after the call.",
+    "phrasesToUse": ["I get how you feel. Other customers have felt the same, and here's what worked.", "Let's take this one step at a time."],
+    "phrasesToAvoid": ["Calm down.", "Matching their anxious pace"]
+  },
+  {
+    "agentId": "diplomat", "customerId": "demanding", "fit": "neutral", "basis": "derived",
+    "risk": "Constant accommodation looks like weakness, so the customer pushes for more and the agent wears out.",
+    "relateStrategy": "Acknowledge, then hold firm boundaries with calm structure. Offer options, not concessions.",
+    "phrasesToUse": ["I understand why this matters to you. Here's what I can do.", "While I can't do X, what I can do is Y."],
+    "phrasesToAvoid": ["I'll see if maybe I can...", "Conceding just to end the pressure"]
+  },
+  {
+    "agentId": "diplomat", "customerId": "hesitant", "fit": "strong", "basis": "derived",
+    "risk": "Being too balanced: presenting everything evenly and never making a recommendation.",
+    "relateStrategy": "Use the rapport to guide them, and make the recommendation explicit.",
+    "phrasesToUse": ["Weighing what you've told me, I'd recommend...", "Are you comfortable going ahead with that?"],
+    "phrasesToAvoid": ["Both are good options. It's really up to you."]
+  },
+  {
+    "agentId": "diplomat", "customerId": "expressive", "fit": "neutral", "basis": "research",
     "risk": "Tangential stories derail the call and inflate Average Handle Time.",
     "relateStrategy": "Acknowledge the story warmly (Nurturing Parent), then pivot to the task (Adult).",
     "phrasesToUse": ["That sounds like a great trip. Let's get this account secured so you can enjoy the rest of it."],
     "phrasesToAvoid": ["Open-ended personal questions"]
+  },
+  {
+    "agentId": "diplomat", "customerId": "cooperative", "fit": "strong", "basis": "derived",
+    "risk": "Low risk. Unneeded smoothing lengthens an easy call.",
+    "relateStrategy": "Be efficient and save your energy for the harder calls.",
+    "phrasesToUse": ["Great, we're on the same page. Here's what happens next."],
+    "phrasesToAvoid": ["Validating emotions that aren't there"]
   }
 ]

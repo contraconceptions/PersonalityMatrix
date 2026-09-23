@@ -1,28 +1,20 @@
+/* Light, calm, low-clutter theme for long shifts. */
 :root {
-  --bg: #f7f7f5;
+  --bg: #f6f8fa;
   --surface: #ffffff;
-  --text: #1c1c1a;
-  --muted: #6b6b66;
-  --border: #e2e2dc;
-  --accent: #2f5bd3;
-  --risk: #b4540a;
-  --relate: #1f7a4d;
-  --avoid: #b3261e;
-  color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #161615;
-    --surface: #1f1f1d;
-    --text: #ececea;
-    --muted: #a0a09a;
-    --border: #33332f;
-    --accent: #7d9bf0;
-    --risk: #f0a060;
-    --relate: #5fcf97;
-    --avoid: #f2837b;
-  }
+  --text: #24303b;
+  --muted: #6a7784;
+  --border: #e3e8ed;
+  --accent: #3b6ea8;
+  --accent-soft: #e8f0f9;
+  --risk: #a86a1d;
+  --risk-soft: #fdf6ec;
+  --relate: #2f7a5b;
+  --relate-soft: #eef7f2;
+  --avoid: #b04a45;
+  --avoid-soft: #fbf0ef;
+  --radius: 10px;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -31,14 +23,16 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 14px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.app { padding: 12px; display: grid; gap: 14px; }
-h1 { font-size: 18px; margin: 0; }
-h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 8px; }
-h3 { font-size: 13px; margin: 0 0 4px; }
+.app { padding: 16px; display: grid; gap: 18px; max-width: 520px; }
+h1 { font-size: 18px; font-weight: 600; margin: 0; }
+h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 4px; }
 ul { margin: 0; padding-left: 18px; }
+li + li { margin-top: 4px; }
 
 .muted { color: var(--muted); }
 .small { font-size: 12px; }
@@ -46,45 +40,51 @@ ul { margin: 0; padding-left: 18px; }
 .eyebrow { display: block; font-size: 11px; color: var(--muted); }
 
 button { font: inherit; color: inherit; cursor: pointer; }
-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .link { background: none; border: 0; color: var(--accent); padding: 0; justify-self: start; }
+.link:hover { text-decoration: underline; }
 
 .app-header { display: flex; justify-content: space-between; align-items: center; }
+.app-header strong { font-size: 15px; font-weight: 600; }
 
 .card-list { list-style: none; padding: 0; display: grid; gap: 8px; }
+.card-list li + li { margin-top: 0; }
 .card {
   width: 100%; text-align: left; display: grid; gap: 2px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;
+  transition: border-color .15s, background .15s;
 }
-.card:hover { border-color: var(--accent); }
+.card:hover { border-color: var(--accent); background: var(--accent-soft); }
 
-.quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .chip {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 4px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px 4px; transition: border-color .15s, background .15s;
 }
-.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip:hover { border-color: var(--accent); }
+.chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
 
-.output { display: grid; gap: 10px; }
-.output-head { display: flex; align-items: center; gap: 8px; }
-.output-head h2 { margin: 0; color: var(--text); text-transform: none; font-size: 16px; letter-spacing: 0; }
-.badge { font-size: 11px; border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; color: var(--muted); }
+.output { display: grid; gap: 12px; }
+.output-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.output-head h2 { margin: 0; color: var(--text); text-transform: none; font-size: 17px; letter-spacing: 0; }
+.meta { margin: -6px 0 0; font-size: 12px; color: var(--muted); }
 
-.transaction { margin: 0; font-size: 12px; }
-.transaction.crossed strong { color: var(--risk); }
-.transaction.complementary strong { color: var(--relate); }
+.fit { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.fit-strong { background: var(--relate-soft); color: var(--relate); }
+.fit-neutral { background: var(--accent-soft); color: var(--accent); }
+.fit-watch { background: var(--risk-soft); color: var(--risk); }
 
-.cues { font-size: 12px; color: var(--muted); }
-
-.block { background: var(--surface); border: 1px solid var(--border); border-left-width: 4px; border-radius: 6px; padding: 8px 10px; }
-.block p { margin: 0 0 4px; }
-.risk { border-left-color: var(--risk); }
+.block { border-radius: var(--radius); padding: 12px 14px; }
+.block p { margin: 0 0 6px; }
+.block p:last-child { margin: 0; }
+.risk { background: var(--risk-soft); }
 .risk h3 { color: var(--risk); }
-.relate { border-left-color: var(--relate); }
+.relate { background: var(--relate-soft); }
 .relate h3 { color: var(--relate); }
-.avoid { border-left-color: var(--avoid); }
+.avoid { background: var(--avoid-soft); }
 .avoid h3 { color: var(--avoid); }
 
-details { margin-top: 6px; }
-summary { cursor: pointer; font-size: 12px; color: var(--muted); }
-.triggers { list-style: none; padding: 0; display: grid; gap: 6px; margin-top: 6px; }
-.triggers li { display: grid; }
+.triggers-panel summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+.triggers { list-style: none; padding: 0; display: grid; gap: 10px; margin-top: 10px; font-size: 13px; }
+.triggers li { display: grid; gap: 1px; }
+.triggers li + li { margin-top: 0; }

@@ -1,28 +1,28 @@
-import type { Guidance } from "../../lib/types";
+import type { Fit, Guidance } from "../../lib/types";
 
 interface Props {
   guidance: Guidance;
   onReset: () => void;
 }
 
+const FIT_LABEL: Record<Fit, string> = {
+  strong: "Natural fit",
+  neutral: "Adjust style",
+  watch: "Watch closely",
+};
+
 export default function MatrixOutput({ guidance: g, onReset }: Props) {
   return (
     <section className="output" aria-live="polite">
       <div className="output-head">
         <h2>{g.customer.name}</h2>
-        {!g.authored && <span className="badge">General guidance</span>}
+        <span className={`fit fit-${g.fit}`}>{FIT_LABEL[g.fit]}</span>
       </div>
 
-      <p className={`transaction ${g.transaction}`}>
-        You ({g.agent.defaultEgoState}) → Customer ({g.customer.egoState}):{" "}
-        <strong>{g.transaction === "crossed" ? "crossed — steer to Adult" : "complementary"}</strong>
+      <p className="meta">
+        {g.customer.channel}
+        {g.transaction === "crossed" && <> · Steer toward Adult</>}
       </p>
-
-      <ul className="cues">
-        {g.customer.identifiers.map((cue) => (
-          <li key={cue}>{cue}</li>
-        ))}
-      </ul>
 
       <div className="block risk">
         <h3>Risk</h3>
@@ -46,19 +46,20 @@ export default function MatrixOutput({ guidance: g, onReset }: Props) {
             <li key={p}>{p}</li>
           ))}
         </ul>
-        <details>
-          <summary>Always-avoid triggers ({g.triggers.length})</summary>
-          <ul className="triggers">
-            {g.triggers.map((t) => (
-              <li key={t.phrase}>
-                <strong>{t.phrase}</strong>
-                <span className="muted small">{t.why}</span>
-                <span>Instead: “{t.instead}”</span>
-              </li>
-            ))}
-          </ul>
-        </details>
       </div>
+
+      <details className="triggers-panel">
+        <summary>Phrases to never use</summary>
+        <ul className="triggers">
+          {g.triggers.map((t) => (
+            <li key={t.phrase}>
+              <strong>{t.phrase}</strong>
+              <span className="muted">{t.why}</span>
+              <span>Instead: “{t.instead}”</span>
+            </li>
+          ))}
+        </ul>
+      </details>
 
       <button className="link" onClick={onReset}>
         Clear

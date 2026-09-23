@@ -32,8 +32,23 @@ describe("data integrity", () => {
     }
   });
 
-  it("authored + missing nodes cover all 36 pairs", () => {
-    expect(matrix.length + missingNodes().length).toBe(36);
+  it("all 36 pairs are authored", () => {
+    expect(missingNodes()).toEqual([]);
+    expect(matrix.length).toBe(36);
+  });
+
+  it("every node has a valid fit, basis, and non-empty guidance", () => {
+    for (const n of matrix) {
+      expect(["strong", "neutral", "watch"]).toContain(n.fit);
+      expect(["research", "derived"]).toContain(n.basis);
+      expect(n.risk && n.relateStrategy).toBeTruthy();
+      expect(n.phrasesToUse.length).toBeGreaterThan(0);
+      expect(n.phrasesToAvoid.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps the 6 nodes taken from the research report", () => {
+    expect(matrix.filter((n) => n.basis === "research")).toHaveLength(6);
   });
 });
 
@@ -45,11 +60,11 @@ describe("resolveGuidance", () => {
     expect(g.phrasesToUse[0]).toMatch(/frustrating for you/);
   });
 
-  it("falls back to customer baseline and agent risk otherwise", () => {
+  it("merges customer baseline phrases after node phrases", () => {
     const g = resolveGuidance("sage", "cooperative")!;
-    expect(g.authored).toBe(false);
-    expect(g.risk).toBe(agents.find((a) => a.id === "sage")!.risk);
-    expect(g.relateStrategy).toBe(customers.find((c) => c.id === "cooperative")!.relateStrategy);
+    const baseline = customers.find((c) => c.id === "cooperative")!;
+    expect(g.fit).toBe("strong");
+    expect(g.phrasesToUse).toEqual(expect.arrayContaining(baseline.phrasesToUse));
   });
 
   it("de-duplicates phrases merged from node and baseline", () => {

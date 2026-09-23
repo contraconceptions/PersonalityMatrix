@@ -38,7 +38,7 @@ whether the node is *authored* or *fallback*, so the UI can show a "generic guid
 - Tests for data integrity and guidance resolution
 
 ### Phase 1 — MVP content & UX
-- [ ] Author the remaining 30 matrix nodes (content work — the core IP of the product)
+- [x] Author all 36 matrix nodes (30 derived — review with client SMEs)
 - [ ] Agent self-assessment quiz (8–12 questions → scores per agent archetype) in `AgentSetup`
 - [ ] Customer quick-ID aids: show identifier cues / example utterances on each button
 - [ ] Keyboard shortcuts (1–6 to pick customer, `Esc` to reset) via `chrome.commands`
@@ -53,6 +53,7 @@ whether the node is *authored* or *fallback*, so the UI can show a "generic guid
 - [ ] Run inference in an offscreen document / worker so the panel stays responsive
 
 ### Phase 3 — Admin & analytics (local)
+- [ ] Demo mode: scripted sample calls that walk through a few pairings for client presentations
 - [ ] Import/export custom matrix JSON (supervisors tune content per org/brand)
 - [ ] Local-only usage log (which pairs come up, which phrases copied) → CSV export for QA coaching
 - [ ] Supervisor-set brand voice overrides
@@ -61,9 +62,8 @@ whether the node is *authored* or *fallback*, so the UI can show a "generic guid
 - [ ] WASM speech-emotion recognition (arousal/valence) to *suggest* the customer archetype
 - [ ] Needs mic/tab-audio consent, legal review (call recording laws) — gate behind policy
 
-## Open questions for the product owner
-1. Target deployment: Chrome Web Store, or enterprise-managed install only?
-2. Should agents be able to re-take / change their archetype freely, or supervisor-locked?
-3. Does one agent archetype ever shift mid-call (e.g. Diplomat choosing a mode), or is it fixed?
-4. Who authors the remaining 30 nodes — you, a subject-matter expert, or draft-with-AI-then-review?
-5. Branding / visual identity for the panel?
+## Product decisions (2026-09-23)
+1. **Distribution:** private client use and demos only. No Chrome Web Store, so the store-policy and review work is out of scope. Share it as a zipped  loaded unpacked, or through enterprise policy.
+2. **Agent archetype:** agents can change it freely (the "Change" link in the header).
+3. **Matrix content:** all 36 nodes are authored. 6 come from the research and 30 are derived (see ). Have client team leads review them before real use.
+4. **Branding:** simple, light, professional and clutter-free. Light theme only, soft tinted guidance blocks, one accent color, and secondary info tucked behind a disclosure.

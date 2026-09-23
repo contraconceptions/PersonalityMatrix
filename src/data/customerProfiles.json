@@ -2,58 +2,120 @@
   {
     "id": "analytical",
     "name": "The Analytical",
-    "identifiers": ["Asks specific policy/timeline questions", "Calm, neutral tone", "No interest in small talk"],
+    "identifiers": [
+      "Asks specific policy/timeline questions",
+      "Calm, neutral tone",
+      "No interest in small talk"
+    ],
     "egoState": "Adult",
     "pcmType": "Thinker",
-    "relateStrategy": "Be precise and chronological. Use exact numbers, policies, and timelines. Skip filler and emotional mirroring.",
-    "phrasesToUse": ["Here's what we know. Here's what we've done. Here's what's next.", "This will be resolved in [X] steps by [date]."],
-    "phrasesToAvoid": ["Let me try to fix this.", "I think it should probably work."]
+    "phrasesToUse": [
+      "Here's what we know. Here's what we've done. Here's what's next.",
+      "This will be resolved in [X] steps by [date]."
+    ],
+    "phrasesToAvoid": [
+      "Let me try to fix this.",
+      "I think it should probably work."
+    ],
+    "channel": "Requestive: factual questions and information",
+    "relateStrategy": "Be precise and chronological. Use exact numbers, policies, and timelines. Skip filler and emotional mirroring."
   },
   {
     "id": "distressed",
     "name": "The Distressed",
-    "identifiers": ["Overwhelmed or anxious", "Passive, seeks confirmation", "Expresses helplessness or fear"],
+    "identifiers": [
+      "Overwhelmed or anxious",
+      "Passive, seeks confirmation",
+      "Expresses helplessness or fear"
+    ],
     "egoState": "Adapted Child",
-    "relateStrategy": "Validate the emotion before anything else, then give simple, structured next steps and reassure often.",
-    "phrasesToUse": ["I realize this whole thing has been frustrating for you.", "I get how you feel. Other customers have felt the same way, and here's what they found worked."],
-    "phrasesToAvoid": ["Calm down.", "The data shows..."]
+    "phrasesToUse": [
+      "I realize this whole thing has been frustrating for you.",
+      "I get how you feel. Other customers have felt the same way, and here's what they found worked."
+    ],
+    "phrasesToAvoid": [
+      "Calm down.",
+      "The data shows..."
+    ],
+    "channel": "Nurturative: warm voice, feelings acknowledged",
+    "relateStrategy": "Validate the emotion before anything else, then give simple, structured next steps and reassure often."
   },
   {
     "id": "demanding",
     "name": "The Demanding",
-    "identifiers": ["Rigid, authoritative", "Uses absolutes: \"always\", \"never\"", "Demands escalation or compensation"],
+    "identifiers": [
+      "Rigid, authoritative",
+      "Uses absolutes: \"always\", \"never\"",
+      "Demands escalation or compensation"
+    ],
     "egoState": "Critical Parent",
     "pcmType": "Persister",
-    "relateStrategy": "Stay in the Adult state. Acknowledge their loyalty, then assert calm structure and firm commitments.",
-    "phrasesToUse": ["Here's what we know. Here's what we've done. Here's what's next.", "While I can't do X, what I can do is Y."],
-    "phrasesToAvoid": ["I'm sorry, there's nothing I can do.", "The most I can offer is..."]
+    "phrasesToUse": [
+      "Here's what we know. Here's what we've done. Here's what's next.",
+      "While I can't do X, what I can do is Y."
+    ],
+    "phrasesToAvoid": [
+      "I'm sorry, there's nothing I can do.",
+      "The most I can offer is..."
+    ],
+    "channel": "Requestive with opinions: ask their view, respect their values",
+    "relateStrategy": "Stay in the Adult state. Acknowledge their loyalty, then assert calm structure and firm commitments."
   },
   {
     "id": "hesitant",
     "name": "The Hesitant",
-    "identifiers": ["Slow to decide", "Re-asks about the same options", "Afraid of the wrong choice"],
+    "identifiers": [
+      "Slow to decide",
+      "Re-asks about the same options",
+      "Afraid of the wrong choice"
+    ],
     "egoState": "Adapted Child",
-    "relateStrategy": "Narrow the choices and gently recommend one. Use collaborative questions rather than commands.",
-    "phrasesToUse": ["What I suggest is...", "Are you able to...?"],
-    "phrasesToAvoid": ["I need you to decide now.", "It's up to you."]
+    "phrasesToUse": [
+      "What I suggest is...",
+      "Are you able to...?"
+    ],
+    "phrasesToAvoid": [
+      "I need you to decide now.",
+      "It's up to you."
+    ],
+    "channel": "Gentle directive: clear, calm next steps",
+    "relateStrategy": "Narrow the choices and gently recommend one. Use collaborative questions rather than commands."
   },
   {
     "id": "expressive",
     "name": "The Expressive",
-    "identifiers": ["Talkative, tells stories", "Easily sidetracked", "Values the relationship"],
+    "identifiers": [
+      "Talkative, tells stories",
+      "Easily sidetracked",
+      "Values the relationship"
+    ],
     "egoState": "Free Child",
     "pcmType": "Promoter",
-    "relateStrategy": "Acknowledge the story warmly, then pivot back to the task with a friendly bridge.",
-    "phrasesToUse": ["That sounds great. Let's get this sorted so you can enjoy the rest of it."],
-    "phrasesToAvoid": ["Can we get back on topic?"]
+    "phrasesToUse": [
+      "That sounds great. Let's get this sorted so you can enjoy the rest of it."
+    ],
+    "phrasesToAvoid": [
+      "Can we get back on topic?"
+    ],
+    "channel": "Emotive: energy, warmth, light humor",
+    "relateStrategy": "Acknowledge the story warmly, then pivot back to the task with a friendly bridge."
   },
   {
     "id": "cooperative",
     "name": "The Cooperative",
-    "identifiers": ["Clear needs", "Provides info readily", "Makes prompt decisions"],
+    "identifiers": [
+      "Clear needs",
+      "Provides info readily",
+      "Makes prompt decisions"
+    ],
     "egoState": "Adult",
-    "relateStrategy": "Match their pace. Collaborate openly and confirm the resolution clearly.",
-    "phrasesToUse": ["Thanks, that's exactly what I needed. Here's what happens next."],
-    "phrasesToAvoid": ["Please hold."]
+    "phrasesToUse": [
+      "Thanks, that's exactly what I needed. Here's what happens next."
+    ],
+    "phrasesToAvoid": [
+      "Please hold."
+    ],
+    "channel": "Requestive: collaborative, fact-based",
+    "relateStrategy": "Match their pace. Collaborate openly and confirm the resolution clearly."
   }
 ]
