@@ -47,10 +47,11 @@ are authored now; the fallback only matters if a node is removed.
 - [ ] Load unpacked in Chrome and pilot with a few agents (`npm run package` → `release/*.zip`)
 
 ### Phase 2 — Local semantic search
-- [ ] Free-text box: agent types what the customer said → suggest archetype + nearest phrases
-- [ ] Transformers.js + quantized `all-MiniLM-L6-v2`, bundled (no remote model fetch)
-- [ ] Build-time script that pre-computes embeddings for all phrases/cues → JSON/IndexedDB
-- [ ] Run inference in an offscreen document / worker so the panel stays responsive
+- [x] Free-text box: agent types/pastes what the customer said → suggested archetype (Enter to accept), matching button outlined
+- [x] Transformers.js v4 + quantized `all-MiniLM-L6-v2` (23 MB), bundled; worker blocks any non-local fetch
+- [x] `npm run embed` pre-computes 72 example-utterance embeddings → `src/data/exampleEmbeddings.json` (238 KB)
+- [x] Inference in a Web Worker (~0.5 s model load, ~10 ms per suggestion)
+- [ ] Grow `customerExamples.json` with real (anonymized) client call lines, then `npm run embed`
 
 ### Phase 3 — Admin & analytics (local)
 - [ ] Demo mode: scripted sample calls that walk through a few pairings for client presentations

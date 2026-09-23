@@ -130,3 +130,20 @@ kbd {
   border-radius: 4px; padding: 1px 5px; background: var(--surface); color: var(--muted);
 }
 .link kbd { margin-left: 4px; }
+
+/* Free-text customer description */
+.describe { display: grid; gap: 6px; }
+.describe textarea {
+  width: 100%; resize: vertical; min-height: 44px; font: inherit; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 11px;
+  transition: border-color .15s;
+}
+.describe textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.describe textarea::placeholder { color: var(--muted); }
+.describe-status { margin: 0; font-size: 12px; min-height: 18px; }
+.suggest {
+  background: var(--accent-soft); color: var(--accent); border: 0; border-radius: 999px;
+  padding: 1px 10px; font-size: 12px; font-weight: 600;
+}
+.suggest.alt { background: transparent; border: 1px dashed var(--accent); }
+.chip.suggested { border: 1px dashed var(--accent); }

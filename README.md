@@ -15,9 +15,11 @@ See `docs/PLAN.md` for the roadmap and `docs/research/` for the source material.
 
 ```sh
 npm install
+npm run setup-model  # one-time: downloads the 23 MB offline model into public/models/ (build also runs this)
 npm run dev        # opens the side panel UI in a normal browser tab (localStorage fallback)
 npm test           # data-integrity + guidance logic tests
-npm run build      # type-check + build the extension into dist/
+npm run build      # type-check + build the extension into dist/ (~50 MB incl. model)
+npm run embed      # re-run after editing src/data/customerExamples.json
 npm run package    # build + zip to release/personality-matrix-<version>.zip for clients
 ```
 
@@ -29,7 +31,7 @@ npm run package    # build + zip to release/personality-matrix-<version>.zip for
 
 For a client, send the zip from `npm run package`. They unzip it and load the folder the same way.
 
-**In the panel:** keys `1`–`6` pick the customer type, `Esc` clears, and clicking a Relate phrase copies it.
+**In the panel:** type or paste what the customer said to get a suggested type (Enter accepts it); keys `1`–`6` pick the customer type, `Esc` clears, and clicking a Relate phrase copies it.
 
 ## Layout
 
@@ -50,3 +52,10 @@ All 36 pairings live in `src/data/interactionMatrix.json`. Each one is tagged wi
 (strong / neutral / watch) and `basis` (research / derived). The method and sources are in
 `docs/research/matrix-methodology.md`. If a pairing is ever removed, the panel falls back to general
 guidance for that customer type, and `missingNodes()` in `src/lib/matrix.ts` lists the gaps.
+
+## Offline suggestions (Phase 2)
+
+What the agent types is matched against example customer lines in with a small on-device model (all-MiniLM-L6-v2 via Transformers.js), running in a Web Worker.
+Nothing is sent anywhere or stored: the worker refuses any fetch outside the extension itself.
+To improve accuracy, add more real (anonymized) example lines per customer type and run .
+ checks accuracy on held-out lines the examples don't contain.

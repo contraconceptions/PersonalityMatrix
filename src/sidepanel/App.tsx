@@ -5,12 +5,14 @@ import { loadAgentId, saveAgentId } from "../lib/storage";
 import type { AgentId, CustomerId } from "../lib/types";
 import AgentSetup from "./components/AgentSetup";
 import CustomerQuickId from "./components/CustomerQuickId";
+import DescribeCustomer from "./components/DescribeCustomer";
 import MatrixOutput from "./components/MatrixOutput";
 
 export default function App() {
   const [loaded, setLoaded] = useState(false);
   const [agentId, setAgentId] = useState<AgentId | null>(null);
   const [customerId, setCustomerId] = useState<CustomerId | null>(null);
+  const [suggestedId, setSuggestedId] = useState<CustomerId | null>(null);
 
   useEffect(() => {
     loadAgentId().then((id) => {
@@ -61,7 +63,9 @@ export default function App() {
         </button>
       </header>
 
-      <CustomerQuickId selected={customerId} onSelect={setCustomerId} />
+      <DescribeCustomer onSuggest={setSuggestedId} onAccept={setCustomerId} />
+
+      <CustomerQuickId selected={customerId} suggested={suggestedId} onSelect={setCustomerId} />
 
       {guidance ? (
         <MatrixOutput guidance={guidance} onReset={() => setCustomerId(null)} />

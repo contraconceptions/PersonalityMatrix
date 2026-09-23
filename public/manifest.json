@@ -3,9 +3,25 @@
   "name": "PersonalityMatrix",
   "version": "0.1.0",
   "description": "Offline agent-assist: match your communication style to the customer in front of you.",
-  "permissions": ["storage", "sidePanel", "clipboardWrite"],
-  "background": { "service_worker": "background.js", "type": "module" },
-  "side_panel": { "default_path": "sidepanel.html" },
-  "action": { "default_title": "Open PersonalityMatrix" },
-  "icons": { "128": "icons/icon128.png" }
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "clipboardWrite"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open PersonalityMatrix"
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
 }

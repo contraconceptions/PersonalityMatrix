@@ -1,0 +1,20 @@
+[
+  { "text": "What's the exact APR on this card and how is interest compounded?", "expected": "analytical" },
+  { "text": "Please list every fee that applies and the date each one was charged.", "expected": "analytical" },
+  { "text": "Which paragraph of the warranty says that?", "expected": "analytical" },
+  { "text": "I can't sleep, I'm terrified they're going to shut off my power.", "expected": "distressed" },
+  { "text": "I'm sorry, I'm so confused and I really need help, please.", "expected": "distressed" },
+  { "text": "I'm freaking out, my card got declined and my kids need groceries.", "expected": "distressed" },
+  { "text": "Get me someone who can actually do their job.", "expected": "demanding" },
+  { "text": "I'm sick of this. You always overcharge me and I want it credited now.", "expected": "demanding" },
+  { "text": "Twenty years I've paid you and you can't even get this right?", "expected": "demanding" },
+  { "text": "I just don't know which package makes sense, can you walk me through them again?", "expected": "hesitant" },
+  { "text": "Let me sleep on it, I'm not ready to decide.", "expected": "hesitant" },
+  { "text": "What would happen if I change my mind next month?", "expected": "hesitant" },
+  { "text": "Oh you're going to laugh, my cat walked across the keyboard and ordered forty things!", "expected": "expressive" },
+  { "text": "So we just got back from Disney, it was amazing, anyway my card isn't working.", "expected": "expressive" },
+  { "text": "You have such a lovely voice! Where are you calling from?", "expected": "expressive" },
+  { "text": "Sure thing, my zip code is 90210. What else do you need?", "expected": "cooperative" },
+  { "text": "Okay, that sounds good, go ahead and process it.", "expected": "cooperative" },
+  { "text": "I've got the order number right here, it's 55812.", "expected": "cooperative" }
+]
