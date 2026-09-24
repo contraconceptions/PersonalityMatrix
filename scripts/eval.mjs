@@ -1,27 +1,23 @@
 // Recognition yardstick (roadmap R1): `npm run eval`.
-// 1. Leave-one-out on the stored example vectors: compares the runtime rule (mean of top-3 neighbours)
-//    with a class centroid and a softmax (logistic regression) classifier. Needs no model download.
+// 1. Leave-one-out on the stored example vectors: compares the runtime pipeline (class centroid + keyword
+//    cues) with the previous rule (mean of top-3 neighbours), the centroid alone and a softmax
+//    (logistic regression) classifier. Needs no model download. The cues were written with these
+//    lines in view, so the "+ cues" row is optimistic; the embedding-only rows are the fair comparison.
 // 2. If the model is present (`npm run setup-model`): top-1 / top-2 accuracy and a confusion table for the
 //    held-out and challenge fixtures, using the same classify() the side panel uses.
-// Imports src/lib/similarity.ts directly, so it needs Node 22.18+ (built-in TypeScript type stripping).
+// Loads the app's own TypeScript (src/lib/similarity.ts) through Vite, so it scores exactly what ships.
 import { existsSync, readFileSync } from "node:fs";
-import { classify, dot, EMBED_OPTIONS, MODEL_ID } from "../src/lib/similarity.ts";
+import { runnerImport } from "vite";
+
+const { module: similarity } = await runnerImport("./src/lib/similarity.ts");
+const { classify, dot, EMBED_OPTIONS, MODEL_ID } = similarity;
+
+const cues = JSON.parse(readFileSync("src/data/cues.json", "utf8"));
 
 const read = (f) => JSON.parse(readFileSync(f, "utf8"));
 const index = read("src/data/exampleEmbeddings.json");
 const TYPES = [...new Set(index.items.map((i) => i.customerId))];
 const pct = (n, d) => `${Math.round((n / d) * 100)}%`.padStart(4);
-
-function centroids(items) {
-  return Object.fromEntries(
-    TYPES.map((t) => {
-      const v = new Array(index.dims).fill(0);
-      for (const it of items) if (it.customerId === t) it.vector.forEach((x, i) => (v[i] += x));
-      const n = Math.hypot(...v);
-      return [t, v.map((x) => x / n)];
-    }),
-  );
-}
 
 // Softmax regression, full-batch gradient descent with L2. Vectors are unit length, so scale inputs.
 function trainSoftmax(items, { epochs = 250, lr = 0.5, l2 = 0.01, scale = 10 } = {}) {
@@ -49,13 +45,19 @@ function trainSoftmax(items, { epochs = 250, lr = 0.5, l2 = 0.01, scale = 10 } =
   return (q) => TYPES.map((t, c) => ({ customerId: t, score: dot(W[c], q) * scale + b[c] })).sort((x, y) => y.score - x.score);
 }
 
+// The rule used before 2026-09-24, kept for comparison.
+function topKNeighbours(q, train, k = 3) {
+  return TYPES.map((t) => {
+    const sims = train.filter((it) => it.customerId === t).map((it) => dot(q, it.vector)).sort((a, b) => b - a).slice(0, k);
+    return { customerId: t, score: sims.reduce((a, b) => a + b, 0) / sims.length };
+  }).sort((x, y) => y.score - x.score);
+}
+
 const rankers = {
-  "top-3 neighbours (runtime)": (q, train) => classify(q, { ...index, items: train }).ranked,
-  "class centroid": (q, train) => {
-    const c = centroids(train);
-    return TYPES.map((t) => ({ customerId: t, score: dot(q, c[t]) })).sort((x, y) => y.score - x.score);
-  },
+  "top-3 neighbours (previous)": (q, train) => topKNeighbours(q, train),
+  "class centroid": (q, train) => classify(q, { ...index, items: train }).ranked,
   "softmax regression": (q, train) => trainSoftmax(train)(q),
+  "centroid + cues (runtime)": (q, train, text) => classify(q, { ...index, items: train }, { text, cues }).ranked,
 };
 
 console.log(`Leave-one-out on ${index.items.length} stored example vectors (${MODEL_ID})`);
@@ -63,13 +65,35 @@ for (const [name, rank] of Object.entries(rankers)) {
   let top1 = 0;
   let top2 = 0;
   index.items.forEach((it, i) => {
-    const r = rank(it.vector, index.items.filter((_, j) => j !== i));
+    const r = rank(it.vector, index.items.filter((_, j) => j !== i), it.text);
     if (r[0].customerId === it.customerId) top1++;
     if (r.slice(0, 2).some((x) => x.customerId === it.customerId)) top2++;
   });
   const n = index.items.length;
   console.log(`  ${name.padEnd(28)} top-1 ${pct(top1, n)}  top-2 ${pct(top2, n)}`);
 }
+
+// Multi-line calls: how the suggestion evolves as lines are committed (per-call accumulation).
+const { module: callMemory } = await runnerImport("./src/lib/callMemory.ts");
+const calls = read("tests/fixtures/callTranscripts.json");
+function scoreCalls(label, vectorsFor) {
+  let byLine = [0, 0, 0];
+  console.log(`\nCalls (${label}): suggested type after each line, * = right`);
+  calls.forEach((call, c) => {
+    let memory = callMemory.emptyCall();
+    const steps = call.lines.map((text, i) => {
+      const line = classify(vectorsFor(c, i), index, { text, cues });
+      const shown = callMemory.combine(line, memory);
+      memory = callMemory.commit(memory, line);
+      const ok = shown.confidence !== "none" && shown.ranked[0].customerId === call.expected;
+      if (ok && i < 3) byLine[i]++;
+      return shown.confidence === "none" ? "  —" : `${shown.ranked[0].customerId.slice(0, 5)}${ok ? "*" : " "}`;
+    });
+    console.log(`  ${call.expected.padEnd(12)} ${steps.join("  ")}`);
+  });
+  console.log(`  right after line 1/2/3: ${byLine.map((n) => `${n}/${calls.length}`).join(", ")}`);
+}
+scoreCalls("keywords only", () => null);
 
 if (!existsSync(`public/models/${MODEL_ID}/onnx/model_quantized.onnx`)) {
   console.log("\nModel not found: run `npm run setup-model` to also score the held-out and challenge fixtures.");
@@ -90,7 +114,7 @@ for (const file of ["tests/fixtures/heldOutUtterances.json", "tests/fixtures/cha
   const conf = { clear: [0, 0], close: [0, 0], none: [0, 0] };
   const misses = [];
   set.forEach((x, i) => {
-    const r = classify(vecs[i], index);
+    const r = classify(vecs[i], index, { text: x.text, cues });
     const got = r.ranked[0].customerId;
     confusion[x.expected][got]++;
     conf[r.confidence][1]++;
@@ -113,3 +137,7 @@ for (const file of ["tests/fixtures/heldOutUtterances.json", "tests/fixtures/cha
   for (const t of TYPES) console.log("  " + t.padEnd(12) + TYPES.map((u) => String(confusion[t][u] || ".").padStart(6)).join(""));
   if (misses.length) console.log(misses.join("\n"));
 }
+
+const callVecs = [];
+for (const call of calls) callVecs.push((await extractor(call.lines, { ...EMBED_OPTIONS })).tolist());
+scoreCalls("model + keywords", (c, i) => callVecs[c][i]);

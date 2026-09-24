@@ -164,24 +164,47 @@ typed line ─► fast path (always, <30 ms)
 
 ## Plan (each step has a measurable gate)
 
-1. **Done in this change:** `npm run eval` (leave-one-out comparison, plus held-out and challenge
+Steps 1–5 were implemented on 2026-09-24. The status of each is at the end of its entry.
+
+1. **Done:** `npm run eval` (leave-one-out comparison, plus held-out and challenge
    scoring with a confusion table when the model is present) and `tests/fixtures/challengeUtterances.json`
    (36 lines: 6 per type, each tagged with the trap it tests, including agent notes, no punctuation,
    negation, misleading keywords). The challenge set is written by us, so it's a stress test, not a real-world estimate.
-2. **Switch the decision rule** to centroid or softmax (train weights in `scripts/embed.mjs`).
-   Gate: held-out ≥ today, challenge set better, every demo line still `clear`.
-3. **Keyword-cue layer + "why" highlights** (roadmap R3): cue families from the research table,
-   direction-aware absolutes, negation window, kept in a data file that clients can edit through import.
-   Gate: challenge accuracy up, with no held-out regression.
+2. **Switch the decision rule** to centroid or softmax. Gate: held-out ≥ today, challenge set better,
+   every demo line still `clear`.
+   *Done:* class centroid, computed at runtime from the index (no extra artifact), with softmax
+   probabilities (temperature 0.04, fitted by leave-one-out). "Clear" means p ≥ 0.7: in leave-one-out,
+   every suggestion at or above that was right (60/60). Leave-one-out top-1: 74% → 86% (embedding
+   only). The real-model gates still need a run with the model.
+3. **Keyword-cue layer + "why" highlights** (roadmap R3). Gate: challenge accuracy up, with no held-out regression.
+   *Done:* `src/data/cues.json` (38 families across the six types). Absolutes are read by direction.
+   Matches right after a negation are ignored. Agreement inside a question ("if I go ahead") doesn't count.
+   Agent shorthand ("cust angry", "caller crying") has its own families. Cues add weight × 1 to the
+   logit, so they nudge the embedding instead of overriding it. The panel shows the matched words
+   ("Heard: supervisor, 4th call"). Clients can replace the cues through the content import (`cues` section, validated).
+   If the model can't load, the panel still suggests from cues alone and says "keywords only".
+   Leave-one-out with cues: 90% top-1, 99% top-2. This is optimistic, because the cues were written with
+   these lines in view.
 4. **Per-call accumulation** (roadmap R2). Gate: multi-line fixture calls reach the right type by line 2–3.
-5. **Optional Gemini Nano deep read** behind a Settings switch and an availability check. Gate:
-   measured on the challenge set and real lines against the fast path; enable only if it clearly wins
-   on close/none cases.
+   *Done:* `src/lib/callMemory.ts`. Each accepted line's per-type log-probabilities (never text) are kept
+   in memory. Earlier lines vote with weight 0.6^k. The agent's accepted type overrides the line's own
+   lean. History clears with "New call" or after 15 minutes idle. `tests/fixtures/callTranscripts.json`
+   (6 calls): keywords alone reach the right type on 5/6 calls by line 2 and 6/6 by line 3; the model
+   run is in `npm run eval`. The per-line *state* signal (escalation meter) from R2 isn't built yet.
+5. **Optional Gemini Nano deep read.** Gate: measured on the challenge set and real lines against the
+   fast path; enable only if it clearly wins on close/none cases.
+   *Done, off by default:* `src/lib/nano.ts` plus Settings → On-device AI. It runs only when the fast path
+   isn't clear, on a fresh session clone per line, with a JSON-schema response (type, runner-up,
+   confidence, evidence). Evidence quotes that don't appear in the text are dropped. The panel labels its pick
+   "AI" and shows "AI heard …". It's never used in demos. Not yet measured against real Chrome AI:
+   that needs a supported device.
 6. **Real data** (NEXT-STEPS §4) → SetFit fine-tune (roadmap R4). Expected to be the largest single gain.
 
-## Not verified in this analysis
+## Not verified yet
 
 Hugging Face is blocked in the environment where this was written, so the model couldn't be run:
-held-out and challenge accuracy of today's matcher are **not** measured here. Run `npm run setup-model`
-then `npm run eval` to get them. The keyword-cue prototype scored well on the challenge set, but it was
-written by the same person as the set, so that score isn't meaningful and isn't quoted.
+held-out, challenge and multi-line call accuracy with the model are **not** measured here, and neither
+are the two real-model tests in `tests/semantic.test.ts` (held-out ≥ 80% top-1, every demo line
+`clear`). Run `npm run setup-model`, then `npm test` and `npm run eval`. If a demo line comes out
+`close`, the first knobs are `TEMPERATURE` and `CLEAR_PROB` in `src/lib/similarity.ts`. Gemini Nano was
+tested only against a fake `LanguageModel` (unit tests and a browser run), not the real model.

@@ -248,6 +248,12 @@ Nothing below can be shown to be an improvement without a yardstick.
   table to Settings → Usage and the CSV export. A pilot then shows exactly where recognition is weak.
 - Tests: logging shape (no text fields), summary math, CSV columns.
 
+**Status (2026-09-24):** the decision rule (centroid + calibrated softmax), keyword cues with "why"
+words, per-call accumulation and the optional Gemini Nano read are built. See the plan in
+`research/recognition-analysis.md`. Still open from R2: the per-line state signal (escalation
+meter). Still open overall: R4 and R5, and a real-model run of `npm test` / `npm run eval`, which
+couldn't be done where this was built.
+
 ### R2. Separate style from state (medium, about 2–3 days; biggest conceptual gain)
 The six types currently mix two ideas the research treats separately. **Style** is the stable Process
 Communication Model personality base, which holds for the whole call. **State** is the momentary

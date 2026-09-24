@@ -1,39 +1,63 @@
 import { useEffect, useRef, useState } from "react";
 import indexData from "../../data/exampleEmbeddings.json";
+import { combine, commitChoice, current, emptyCall, type CallMemory } from "../../lib/callMemory";
 import { embed, onStatus, warmUp, type ModelStatus } from "../../lib/embedClient";
 import { getCustomer } from "../../lib/matrix";
+import { aiClassify, type AiResult } from "../../lib/nano";
 import { classify, type Classification, type EmbeddingIndex } from "../../lib/similarity";
 import type { CustomerId } from "../../lib/types";
 import { useContent } from "../ContentContext";
+import { useAiAssist } from "../useAiAssist";
 
 const index = indexData as EmbeddingIndex;
 const MIN_CHARS = 12;
 const DEBOUNCE_MS = 350;
-
-/** Resolves to null if the model failed to load. */
-async function classifyText(text: string): Promise<Classification | null> {
-  const vector = await embed(text);
-  return vector ? classify(vector, index) : null;
-}
+/** Wait a little longer before asking the on-device AI, so it isn't started on every keystroke. */
+const AI_DELAY_MS = 500;
 
 interface Props {
   onSuggest: (id: CustomerId | null) => void;
   onAccept: (id: CustomerId) => void;
+  /** "New call" clears the call's history; the parent clears the selected customer type. */
+  onNewCall?: () => void;
   /** Demo mode: type this text into the box, as if the agent were typing it live. */
   presetText?: string;
+  /** Allow the optional on-device AI read (off in demos, which should be repeatable). */
+  allowAi?: boolean;
 }
 
-// Free-text box: the agent types or pastes what the customer said and gets a suggested
-// archetype. Runs fully on-device; the text is never stored or sent anywhere.
-export default function DescribeCustomer({ onSuggest, onAccept, presetText }: Props) {
+interface Shown {
+  /** This line combined with the call's earlier lines: what the agent sees. */
+  result: ReturnType<typeof combine>;
+  /** This line alone: what gets added to the call's history when accepted. */
+  line: Classification;
+  forText: string;
+}
+
+interface AiState {
+  forText: string;
+  pending: boolean;
+  result: AiResult | null;
+}
+
+// Free-text box: the agent types or pastes what the customer said (or a quick note about them) and gets
+// a suggested type. Everything runs on this device; the text is never stored or sent anywhere.
+export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, presetText, allowAi = true }: Props) {
   const { content } = useContent();
+  const ai = useAiAssist();
   const [text, setText] = useState("");
   const [status, setStatus] = useState<ModelStatus>("idle");
-  const [result, setResult] = useState<Classification | null>(null);
+  const [shown, setShown] = useState<Shown | null>(null);
+  const [memory, setMemory] = useState<CallMemory>(emptyCall);
+  const [aiState, setAiState] = useState<AiState | null>(null);
   const latest = useRef(0);
-  // The trimmed text `result` was computed for. While the agent is still typing (or just pasted),
-  // the shown suggestion is for older text and Enter must not accept it.
-  const resultText = useRef("");
+  // Read inside async callbacks, which must see the current values.
+  const statusRef = useRef(status);
+  statusRef.current = status;
+  const memoryRef = useRef(memory);
+  memoryRef.current = memory;
+  const contentRef = useRef(content);
+  contentRef.current = content;
 
   useEffect(() => {
     warmUp();
@@ -54,61 +78,118 @@ export default function DescribeCustomer({ onSuggest, onAccept, presetText }: Pr
     return () => clearInterval(id);
   }, [presetText]);
 
+  const keywordOnly = (trimmed: string) => classify(null, index, { text: trimmed, cues: contentRef.current.cues });
+
+  /** Embedding + keyword cues; keyword cues alone if the model can't load. */
+  async function classifyText(trimmed: string): Promise<Classification> {
+    const vector = statusRef.current === "error" ? null : await embed(trimmed);
+    return classify(vector, index, { text: trimmed, cues: contentRef.current.cues });
+  }
+
+  function show(line: Classification, forText: string) {
+    setShown({ result: combine(line, memoryRef.current), line, forText });
+  }
+
   useEffect(() => {
     const trimmed = text.trim();
     if (trimmed.length < MIN_CHARS) {
-      setResult(null);
-      onSuggest(null);
+      latest.current++;
+      setShown(null);
       return;
     }
     const ticket = ++latest.current;
+    // Until the model is ready, keywords give an instant first suggestion.
+    if (statusRef.current !== "ready") show(keywordOnly(trimmed), trimmed);
+    if (statusRef.current === "error") return;
     const t = setTimeout(async () => {
       const r = await classifyText(trimmed);
-      if (ticket !== latest.current || !r) return; // superseded by newer input
-      show(r, trimmed);
+      if (ticket === latest.current) show(r, trimmed); // otherwise superseded by newer input
     }, DEBOUNCE_MS);
     return () => clearTimeout(t);
-    // Only re-run on text changes; onSuggest is a state setter from App.
+    // Only re-run on text changes.
   }, [text]);
 
-  const top = result && result.confidence !== "none" ? result.ranked[0] : null;
-  const alt = result?.confidence === "close" ? result.ranked[1] : null;
+  // Optional deep read: only when the fast path isn't clear, and only on its final (non-interim) result.
+  const interim = Boolean(shown?.line.keywordOnly && status !== "error");
+  const needsAi = Boolean(allowAi && ai.ready && shown && !interim && shown.result.confidence !== "clear");
+  useEffect(() => {
+    if (!needsAi || !shown) return;
+    const forText = shown.forText;
+    const ctl = new AbortController();
+    setAiState({ forText, pending: true, result: null });
+    const t = setTimeout(async () => {
+      const result = await aiClassify(forText, contentRef.current.customerProfiles, ctl.signal);
+      if (!ctl.signal.aborted) setAiState({ forText, pending: false, result });
+    }, AI_DELAY_MS);
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
+  }, [needsAi, shown?.forText]);
 
-  const accept = (id: CustomerId) => {
-    onAccept(id);
-    setText("");
+  // What to show: the AI's read when it answered for this text and the fast path wasn't clear.
+  const fast = shown && shown.result.confidence !== "none" ? shown.result : null;
+  const aiNow = aiState && shown && aiState.forText === shown.forText ? aiState : null;
+  const aiPick = aiNow?.result && shown?.result.confidence !== "clear" ? aiNow.result : null;
+  const primary: CustomerId | null = aiPick?.customerId ?? fast?.ranked[0].customerId ?? null;
+  const alt: CustomerId | null = aiPick
+    ? aiPick.runnerUp ?? (fast && fast.ranked[0].customerId !== aiPick.customerId ? fast.ranked[0].customerId : null)
+    : fast?.confidence === "close"
+      ? fast.ranked[1].customerId
+      : null;
+  const why = aiPick
+    ? aiPick.evidence
+    : [...new Set((shown?.result.cues ?? []).filter((h) => h.customerId === primary).map((h) => h.match))].slice(0, 3);
+  const callLines = current(memory).lines.length;
+
+  useEffect(() => onSuggest(primary), [primary]);
+
+  const name = (id: CustomerId) => getCustomer(id, content)?.name.replace(/^The /, "");
+  const hint = (id: CustomerId) => {
+    const example = shown?.result.ranked.find((r) => r.customerId === id)?.example;
+    return example ? `Similar to: “${example}”` : undefined;
   };
 
-  function show(r: Classification, forText: string) {
-    setResult(r);
-    resultText.current = forText;
-    onSuggest(r.confidence === "none" ? null : r.ranked[0].customerId);
-  }
+  const accept = (id: CustomerId, line: Classification | null = shown?.line ?? null) => {
+    if (line) setMemory((m) => commitChoice(m, line, id));
+    onAccept(id);
+    setText("");
+    setAiState(null);
+  };
 
   // Enter before the debounced suggestion has caught up: classify the current text now, then accept.
   const acceptCurrent = async (trimmed: string) => {
     const ticket = ++latest.current; // also cancels the pending debounced run
     const r = await classifyText(trimmed);
-    if (ticket !== latest.current || !r) return; // text changed meanwhile, or the model failed
-    if (r.confidence === "none") show(r, trimmed);
-    else accept(r.ranked[0].customerId);
+    if (ticket !== latest.current) return; // text changed meanwhile
+    const combined = combine(r, memoryRef.current);
+    if (combined.confidence === "none") show(r, trimmed);
+    else accept(combined.ranked[0].customerId, r);
   };
+
+  const newCall = () => {
+    setMemory(emptyCall());
+    setText("");
+    setAiState(null);
+    onNewCall?.();
+  };
+
+  const trimmed = text.trim();
+  const long = trimmed.length >= MIN_CHARS;
 
   return (
     <section className="describe" aria-label="Describe the customer">
       <textarea
         rows={2}
         value={text}
-        placeholder="Type or paste what the customer said…"
+        placeholder="Type or paste what the customer said, or a quick note about them…"
         aria-describedby="describe-status"
-        disabled={status === "error"}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
-          const trimmed = text.trim();
-          if (e.key === "Enter" && !e.shiftKey && top && resultText.current === trimmed) {
+          if (e.key === "Enter" && !e.shiftKey && primary && shown?.forText === trimmed) {
             e.preventDefault();
-            accept(top.customerId);
-          } else if (e.key === "Enter" && !e.shiftKey && trimmed.length >= MIN_CHARS && status !== "error") {
+            accept(primary);
+          } else if (e.key === "Enter" && !e.shiftKey && long) {
             e.preventDefault();
             void acceptCurrent(trimmed);
           } else if (e.key === "Escape") {
@@ -116,20 +197,19 @@ export default function DescribeCustomer({ onSuggest, onAccept, presetText }: Pr
           }
         }}
       />
-      <p id="describe-status" className={`describe-status is-${status}`}>
-        {status === "error" ? (
-          "Suggestions unavailable. Pick the customer type below."
-        ) : top ? (
+      <p id="describe-status" className={`describe-status is-${status}${primary ? " has-suggestion" : ""}`} aria-live="polite">
+        {primary ? (
           <>
             Sounds{" "}
-            <button className="suggest" onClick={() => accept(top.customerId)} title={`Similar to: “${top.example}”`}>
-              {getCustomer(top.customerId, content)?.name.replace(/^The /, "")}
+            <button className="suggest" onClick={() => accept(primary)} title={hint(primary)}>
+              {name(primary)}
+              {aiPick && <span className="ai-badge">AI</span>}
             </button>
             {alt && (
               <>
                 {" "}or{" "}
-                <button className="suggest alt" onClick={() => accept(alt.customerId)} title={`Similar to: “${alt.example}”`}>
-                  {getCustomer(alt.customerId, content)?.name.replace(/^The /, "")}
+                <button className="suggest alt" onClick={() => accept(alt)} title={hint(alt)}>
+                  {name(alt)}
                 </button>
               </>
             )}
@@ -137,12 +217,38 @@ export default function DescribeCustomer({ onSuggest, onAccept, presetText }: Pr
               <kbd>Enter</kbd> to use
             </span>
           </>
-        ) : text.trim().length >= MIN_CHARS && status === "loading" ? (
+        ) : aiNow?.pending ? (
+          "Checking with on-device AI…"
+        ) : long && status === "loading" ? (
           "Preparing on-device model…"
+        ) : long && status === "error" ? (
+          "No clear keywords yet. Keep typing, or pick the customer type below."
         ) : (
           <span className="muted">Stays on this device.</span>
         )}
       </p>
+      {(why.length > 0 || callLines > 0 || (primary && aiNow?.pending) || (primary && shown?.line.keywordOnly && !aiPick)) && (
+        <p className="describe-meta">
+          {why.length > 0 && (
+            <span className="why">
+              {aiPick ? "AI heard" : "Heard"}{" "}
+              {why.map((w) => (
+                <mark key={w}>{w}</mark>
+              ))}
+            </span>
+          )}
+          {primary && shown?.line.keywordOnly && !aiPick && <span>keywords only</span>}
+          {primary && aiNow?.pending && <span>checking with AI…</span>}
+          {callLines > 0 && (
+            <span>
+              {callLines} earlier {callLines === 1 ? "line" : "lines"} this call ·{" "}
+              <button className="link" onClick={newCall}>
+                New call
+              </button>
+            </span>
+          )}
+        </p>
+      )}
     </section>
   );
 }

@@ -71,12 +71,30 @@ export interface BrandVoice {
   extraTriggers: TriggerPhrase[];
 }
 
+/**
+ * A family of words or phrases that point to one customer type (see docs/research/recognition-analysis.md).
+ * A family adds its weight once when any pattern matches. Patterns are regular expressions, matched
+ * against lowercased text with straight apostrophes.
+ */
+export interface CueFamily {
+  customerId: CustomerId;
+  /** Short reason shown to the agent, e.g. "escalation demand". */
+  why: string;
+  /** Evidence strength, roughly in log-odds units (0–3). */
+  weight: number;
+  /** Ignore a match directly after a negation ("not upset", "not in a rush"). */
+  negatable?: boolean;
+  patterns: string[];
+}
+
 /** Everything the guidance is built from. Agent archetypes are fixed; the rest is editable. */
 export interface Content {
   customerProfiles: CustomerProfile[];
   interactionMatrix: MatrixNode[];
   triggers: TriggerPhrase[];
   brandVoice: BrandVoice;
+  /** Recognition cues for the "what the customer said" box. */
+  cues: CueFamily[];
 }
 
 export interface Guidance {

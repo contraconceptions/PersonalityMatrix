@@ -32,7 +32,7 @@ npm test           # 48 tests: data integrity, guidance, quiz, shortcuts, Phase 
 npm run typecheck  # tsc --noEmit
 npm run build      # type-check + build the extension into dist/ (~50 MB incl. model)
 npm run embed      # re-run after editing src/data/customerExamples.json
-npm run eval       # recognition yardstick: classifier comparison + held-out/challenge accuracy (Node 22.18+)
+npm run eval       # recognition yardstick: classifier comparison + held-out/challenge accuracy
 npm run package    # build + zip to release/personality-matrix-<version>.zip for clients
 ```
 
@@ -84,6 +84,8 @@ tests/                      Vitest (+ held-out lines for accuracy in tests/fixtu
 - No network access at runtime. The model and its WASM runtime ship inside the extension, and the
   model worker rejects any request that isn't to the extension itself.
 - What the agent types to get a suggestion stays in memory and is never stored or logged.
+- The optional on-device AI uses Chrome's built-in model on this computer. Chrome downloads the model
+  from Google once; no text is sent.
 - Saved on the device only: the agent's archetype, supervisor content overrides and the usage log
   (customer-type picks and copied phrases). Settings → Usage can export or clear the log.
 
@@ -100,11 +102,22 @@ each agent's machine (overrides are stored per device).
 If a pairing is ever removed, the panel falls back to general guidance for that customer type, and
 `missingNodes()` in `src/lib/matrix.ts` lists the gaps.
 
-## Offline suggestions (Phase 2)
+## Offline suggestions
 
-What the agent types is compared with example customer lines in `src/data/customerExamples.json`
-using a small on-device model (all-MiniLM-L6-v2 via Transformers.js) that runs in a Web Worker.
-Nothing the agent types is sent anywhere or stored, and the worker refuses any fetch from outside
-the extension itself. To improve accuracy, add more real (anonymized) example lines for each
-customer type and run `npm run embed`. `tests/semantic.test.ts` measures accuracy on held-out lines
-that aren't in the examples.
+The agent types what the customer said, or a quick note ("cust angry, 4th call"). The panel suggests a
+type from two signals:
+
+- **Meaning:** a small on-device model (all-MiniLM-L6-v2 via Transformers.js, in a Web Worker) compares
+  the line with the example lines for each type in `src/data/customerExamples.json`.
+- **Keywords:** research-based cue words in `src/data/cues.json` (for example "supervisor", "not sure",
+  or "you always…" vs. "I always mess up"). The panel shows the words it heard. If the model can't load, keywords alone still give suggestions.
+
+Each line the agent accepts adds to that call's evidence, so a customer's style builds up over the call.
+**New call** clears it. Optionally, Chrome's built-in on-device AI (Settings → On-device AI, off by
+default, Chrome 138+ on capable hardware) takes a closer look when the suggestion is unclear.
+
+Nothing the agent types is sent anywhere or stored. The worker refuses any fetch from outside the
+extension, and the call history keeps only per-type scores, in memory. To improve accuracy, add real
+(anonymized) example lines and run `npm run embed`, or tune the cues through the content import.
+`npm run eval` and `tests/semantic.test.ts` measure accuracy. The method and research are in
+`docs/research/recognition-analysis.md`.

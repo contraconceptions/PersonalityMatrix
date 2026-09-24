@@ -118,6 +118,8 @@ export default function App() {
       <DescribeCustomer
         key={demo ? `demo-${demo.index}` : "live"}
         presetText={scenario?.customerLine}
+        allowAi={!demo}
+        onNewCall={() => setCustomerId(null)}
         onSuggest={setSuggestedId}
         onAccept={(id) => (demo ? setDemo({ index: demo.index, beat: "guide" }) : selectCustomer(id, "suggestion"))}
       />

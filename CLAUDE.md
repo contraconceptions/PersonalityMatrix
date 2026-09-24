@@ -24,7 +24,7 @@ npx vitest run -t "all 36 pairs"           # single test by name
 npm run typecheck     # tsc --noEmit
 npm run build         # fetch model + typecheck + vite build → dist/ (load unpacked in chrome://extensions)
 npm run embed         # REQUIRED after editing src/data/customerExamples.json (a test fails otherwise)
-npm run eval          # recognition yardstick (see docs/research/recognition-analysis.md); Node 22.18+
+npm run eval          # recognition yardstick (see docs/research/recognition-analysis.md)
 npm run package       # build + zip → release/personality-matrix-<version from public/manifest.json>.zip
 ```
 
@@ -53,12 +53,18 @@ while triggers and brandVoice replace. The effective `Content` comes from `useCo
 through as the `content` argument, so pass it rather than relying on the `defaultContent` default in UI code.
 Agent profiles are not overridable.
 
-**Offline suggestions (Phase 2):** `DescribeCustomer` → `src/lib/embedClient.ts` (one lazily started
-module Web Worker, promise-based `embed()`) → `src/sidepanel/embedder.worker.ts` (transformers.js,
-quantized all-MiniLM-L6-v2, WASM) → `classify()` in `src/lib/similarity.ts`. `classify()` compares
-the vector against the precomputed `src/data/exampleEmbeddings.json`: the mean of the top-3 per type,
-with a `clear`/`close`/`none` confidence. The thresholds are tuned against
-`tests/fixtures/heldOutUtterances.json`. `MODEL_ID` in `similarity.ts` must match `scripts/embed.mjs`.
+**Recognition (suggested customer type):** `DescribeCustomer` → `src/lib/embedClient.ts` (one lazily
+started module Web Worker, promise-based `embed()`) → `src/sidepanel/embedder.worker.ts` (transformers.js,
+quantized all-MiniLM-L6-v2, WASM) → `classify(vector | null, index, { text, cues })` in
+`src/lib/similarity.ts`. `classify()` uses a softmax over cosine similarity to each type's centroid,
+computed from `exampleEmbeddings.json` at runtime (temperature 0.04), plus the keyword-cue scores from
+`src/lib/cues.ts` / `src/data/cues.json`. Confidence: `clear` at p ≥ 0.7, `none` below 0.4 or with no
+signal. `vector === null` means keyword-only mode (the model is loading or failed).
+`src/lib/callMemory.ts` combines accepted lines across a call (0.6^k decay, only log-probs kept).
+`src/lib/nano.ts` is the optional Gemini Nano (Chrome Prompt API) read, used only when the fast path
+isn't clear and the Settings switch (`aiAssist`) is on. The constants are fitted by leave-one-out
+(`npm run eval`); `docs/research/recognition-analysis.md` explains them. `MODEL_ID` in `similarity.ts`
+must match `scripts/embed.mjs`. Cues are part of `Content` and can be replaced through the content import.
 
 **Storage** (`src/lib/storage.ts`): `chrome.storage.local` in the extension, `localStorage` under
 `npm run dev`. Always go through `getJSON`/`setJSON`/`removeKey`.
@@ -69,7 +75,8 @@ phrases only), `quiz.ts` (agent self-assessment), `shortcuts.ts` (keys 1–6 and
 
 ## Constraints and gotchas
 
-- **Privacy invariant:** never log or persist customer text or embedding vectors. The usage log holds
+- **Privacy invariant:** never log or persist customer text or embedding vectors. Call memory holds only
+  per-type log-probabilities, in memory. The usage log holds
   only type ids, selection source, confidence and copied agent-side phrases. The worker overrides
   `self.fetch` to block every non-same-origin request. Keep that guard.
 - **Everything must ship inside the extension** (MV3 forbids remote code, and the panel must work offline):

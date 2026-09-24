@@ -1,7 +1,9 @@
+import { checkPattern } from "./cues";
 import { agents, customers, defaultContent } from "./matrix";
 import type {
   BrandVoice,
   Content,
+  CueFamily,
   CustomerProfile,
   EgoState,
   Fit,
@@ -21,6 +23,7 @@ export interface ContentOverrides {
   interactionMatrix?: MatrixNode[];
   triggers?: TriggerPhrase[];
   brandVoice?: BrandVoice;
+  cues?: CueFamily[];
 }
 
 export type ValidationResult =
@@ -32,6 +35,7 @@ const FITS: Fit[] = ["strong", "neutral", "watch"];
 const AGENT_IDS = agents.map((a) => a.id) as string[];
 const CUSTOMER_IDS = customers.map((c) => c.id) as string[];
 const MAX_ERRORS = 10;
+const MAX_PATTERN = 300;
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const isStr = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
@@ -55,6 +59,7 @@ export function mergeContent(overrides: ContentOverrides | null, base: Content =
     interactionMatrix: [...nodes.values()],
     triggers: overrides.triggers ?? base.triggers,
     brandVoice: overrides.brandVoice ?? base.brandVoice,
+    cues: overrides.cues ?? base.cues,
   };
 }
 
@@ -68,6 +73,7 @@ export function exportContent(content: Content): Record<string, unknown> {
     triggers: content.triggers,
     customerProfiles: content.customerProfiles.map(({ pcmType: _p, ...rest }) => rest),
     interactionMatrix: content.interactionMatrix,
+    cues: content.cues,
   };
 }
 
@@ -175,6 +181,35 @@ export function validateContent(data: unknown): ValidationResult {
           extraTriggers: extra as TriggerPhrase[],
         };
       }
+    }
+  }
+
+  if (data.cues !== undefined) {
+    if (!Array.isArray(data.cues)) errors.push(`"cues" must be a list.`);
+    else {
+      overrides.cues = [];
+      data.cues.forEach((c, i) => {
+        const at = `cues[${i}]`;
+        if (!isObj(c)) return void errors.push(`${at} must be an object.`);
+        const bad: string[] = [];
+        if (!CUSTOMER_IDS.includes(c.customerId as string)) bad.push(`"customerId" (one of ${CUSTOMER_IDS.join(", ")})`);
+        if (!isStr(c.why)) bad.push(`"why"`);
+        if (typeof c.weight !== "number" || !(c.weight > 0 && c.weight <= 3)) bad.push(`"weight" (a number above 0, up to 3)`);
+        if (c.negatable !== undefined && typeof c.negatable !== "boolean") bad.push(`"negatable" (true or false)`);
+        if (!isStrArr(c.patterns) || c.patterns.length === 0) bad.push(`"patterns" (list of text)`);
+        if (bad.length) return void errors.push(`${at} is missing or has invalid ${bad.join(", ")}.`);
+        for (const p of c.patterns as string[]) {
+          const problem = p.length > MAX_PATTERN ? `is longer than ${MAX_PATTERN} characters` : checkPattern(p);
+          if (problem) return void errors.push(`${at}: pattern "${p.slice(0, 40)}" ${problem}.`);
+        }
+        overrides.cues!.push({
+          customerId: c.customerId as CueFamily["customerId"],
+          why: c.why as string,
+          weight: c.weight as number,
+          ...(c.negatable === undefined ? {} : { negatable: c.negatable as boolean }),
+          patterns: c.patterns as string[],
+        });
+      });
     }
   }
 

@@ -1,0 +1,331 @@
+[
+  {
+    "customerId": "analytical",
+    "why": "precision",
+    "weight": 1.2,
+    "patterns": [
+      "\\b(exact(ly)?|precise(ly)?|specific(ally|s)?|itemi[sz]ed|breakdown|line items?)\\b",
+      "\\b(calculat\\w*|formula|the math|how (you|they) (got|came up with)|prorat\\w*|compounded)\\b",
+      "\\b(clause|paragraph|section \\d|terms and conditions|in writing|documentation|reference (number|#))\\b"
+    ]
+  },
+  {
+    "customerId": "analytical",
+    "why": "fact-finding question",
+    "weight": 0.8,
+    "patterns": [
+      "\\b(which (one|fee|charge|clause|version|paragraph|date|plan)|how (much|many|long)|what (date|day|time|percentage|rate))\\b",
+      "\\b(when exactly|is that (calendar|business)|does the \\w+ (start|include|cover))\\b",
+      "\\b(apr|interest rate|percent|%)"
+    ]
+  },
+  {
+    "customerId": "analytical",
+    "why": "numbers",
+    "weight": 0.5,
+    "patterns": [
+      "(\\$ ?\\d|\\b\\d+[- ]?(day|days|month|months|year|%)\\b|\\bline \\d)"
+    ]
+  },
+  {
+    "customerId": "analytical",
+    "why": "agent note",
+    "weight": 1.0,
+    "negatable": true,
+    "patterns": [
+      "\\b(wants (details|specifics|a breakdown|it in writing)|detail[- ]oriented|very technical|asked for (the )?policy)\\b"
+    ]
+  },
+  {
+    "customerId": "distressed",
+    "why": "fear or anxiety",
+    "weight": 1.4,
+    "negatable": true,
+    "patterns": [
+      "\\b(scared|terrified|afraid|frightened|panick(ing|ed)|freaking out|anxious|overwhelmed|stressed( out)?|desperate)\\b",
+      "\\b(crying|in tears|can'?t sleep|can'?t breathe|losing my mind)\\b"
+    ]
+  },
+  {
+    "customerId": "distressed",
+    "why": "helplessness",
+    "weight": 1.1,
+    "patterns": [
+      "\\b(i (don'?t|do not) know what (to do|i'?m doing)|nowhere (else )?to turn|(don'?t|do not) know who else)\\b",
+      "\\b(need (someone|somebody) to help|please (help|don'?t hang up)|i can'?t (deal|cope|handle))\\b"
+    ]
+  },
+  {
+    "customerId": "distressed",
+    "why": "self-blame (absolutes aimed at self)",
+    "weight": 1.0,
+    "patterns": [
+      "\\b(my fault|i (feel|am) (so )?(stupid|dumb|useless)|i did something wrong|i made it worse)\\b",
+      "\\b(nothing (ever )?(works|goes right) for me|i (always|keep) (mess|screw)\\w*|i can never|everything (always )?goes wrong)\\b"
+    ]
+  },
+  {
+    "customerId": "distressed",
+    "why": "high stakes",
+    "weight": 0.9,
+    "patterns": [
+      "\\b(rent|evict\\w*|shut ?off|cut (the \\w+ )?off|groceries|medication|hospital|passed away|funeral)\\b",
+      "\\b(lose (everything|my (house|home|job))|kids'? (coverage|food|school)|bounce[sd]?)\\b"
+    ]
+  },
+  {
+    "customerId": "distressed",
+    "why": "repeated apology",
+    "weight": 0.6,
+    "patterns": [
+      "\\b(sorry,? (i'?m )?sorry|i'?m (so )?sorry to bother)\\b"
+    ]
+  },
+  {
+    "customerId": "distressed",
+    "why": "agent note",
+    "weight": 1.0,
+    "negatable": true,
+    "patterns": [
+      "\\b(caller|cust(omer)?|she|he|they)('?s| is| was| are)? (very |really |so )?(upset|crying|scared|panicked|anxious|distraught|confused|emotional|in tears)\\b"
+    ]
+  },
+  {
+    "customerId": "demanding",
+    "why": "escalation demand",
+    "weight": 1.5,
+    "patterns": [
+      "\\b(supervisor|manager|someone (with authority|in charge|who can actually)|transfer me|escalate)\\b",
+      "\\b((file|filing|make) a complaint|lawyer|attorney|sue|bbb|better business bureau|regulator|leave a review|social media)\\b"
+    ]
+  },
+  {
+    "customerId": "demanding",
+    "why": "threatens to leave",
+    "weight": 0.9,
+    "patterns": [
+      "\\b(i'?m|i am|i will|i'?ll|going to|gonna) (cancel|leave|switch|take my business)\\w*",
+      "\\b(cancel (everything|my (whole )?account|all of it)|close my account|switching providers?)\\b"
+    ]
+  },
+  {
+    "customerId": "demanding",
+    "why": "blame + absolutes (aimed at company)",
+    "weight": 1.2,
+    "patterns": [
+      "\\b(you|you people|you guys|your (company|people|staff)|they)\\b[^.?!]{0,30}\\b(always|never|every (single )?time|keep)\\b"
+    ]
+  },
+  {
+    "customerId": "demanding",
+    "why": "judgment words",
+    "weight": 1.0,
+    "negatable": true,
+    "patterns": [
+      "\\b(unacceptable|ridiculous|incompetent|terrible|pathetic|a joke|useless|sick of|fed up|disgrace\\w*|outrageous)\\b"
+    ]
+  },
+  {
+    "customerId": "demanding",
+    "why": "imperative + urgency",
+    "weight": 0.9,
+    "patterns": [
+      "\\b(fix (it|this)|credit (my|me|it)|refund (me|it)|i (want|demand) (a refund|compensation|my money back|(this|it) (fixed|credited|refunded|sorted)))\\b",
+      "\\b(right now|immediately|today or|not waiting)\\b"
+    ]
+  },
+  {
+    "customerId": "demanding",
+    "why": "values and entitlement",
+    "weight": 0.9,
+    "patterns": [
+      "\\b(principle|should honou?r|i know my rights|loyal (customer)?|after all these years)\\b",
+      "\\b(\\d+|\\w+) years (i'?ve|with you|as a customer)|been (with you|a customer)[^.]{0,20}years\\b"
+    ]
+  },
+  {
+    "customerId": "demanding",
+    "why": "repeated problem",
+    "weight": 0.9,
+    "patterns": [
+      "\\b(second|third|fourth|fifth|\\d+(st|nd|rd|th)) (time|call|month|week)\\b",
+      "\\b(in a row|again and again|same (problem|issue|thing) again|still (not|hasn'?t|haven'?t)|charged (me )?twice)\\b"
+    ]
+  },
+  {
+    "customerId": "demanding",
+    "why": "rejects empathy or policy",
+    "weight": 0.9,
+    "patterns": [
+      "\\b(not interested in (your )?(apolog\\w*|excuses)|(don'?t|do not) (want|need) (your )?(excuses|apolog\\w*|sympathy)|(don'?t|do not) tell me about (your )?policy)\\b"
+    ]
+  },
+  {
+    "customerId": "demanding",
+    "why": "agent note",
+    "weight": 1.0,
+    "negatable": true,
+    "patterns": [
+      "\\b(angry|irate|furious|yelling|shouting|hostile|abusive|threaten(ing|ed)|escalat(ing|ed))\\b"
+    ]
+  },
+  {
+    "customerId": "hesitant",
+    "why": "tentative words",
+    "weight": 1.2,
+    "patterns": [
+      "\\b(not (really |totally |quite )?sure|unsure|maybe|i guess|perhaps|i (just |really )?(don'?t|do not) know which|can'?t decide|on the fence|or wait|i'?m torn)\\b"
+    ]
+  },
+  {
+    "customerId": "hesitant",
+    "why": "puts off the decision",
+    "weight": 1.1,
+    "patterns": [
+      "\\b(think (about|it over)|sleep on it|i'?ll call (you )?back|call back later|get back to you|check with|ask my|talk to my|not ready|commit)\\b",
+      "\\b(which (one )?would you|what would you (do|pick|choose)|recommend (one|something)|what do most people)\\b"
+    ]
+  },
+  {
+    "customerId": "hesitant",
+    "why": "asks again",
+    "weight": 0.9,
+    "patterns": [
+      "\\b((explain|go over|say|repeat|tell me|walk me through)( \\w+){0,4} again|one more time|go over|back and forth|asked (the )?same)\\b"
+    ]
+  },
+  {
+    "customerId": "hesitant",
+    "why": "fear of the wrong choice",
+    "weight": 0.9,
+    "patterns": [
+      "\\b(wrong (plan|one|choice|option)|am i stuck|locked in|change (it|my mind)|what if i|any risk|be sure before|make a mistake)\\b",
+      "\\bif i (go ahead|sign up|switch|upgrade|change|cancel)\\b"
+    ]
+  },
+  {
+    "customerId": "hesitant",
+    "why": "fillers",
+    "weight": 0.5,
+    "patterns": [
+      "\\b(u+m+|u+h+|hm+|e+r+m*)\\b"
+    ]
+  },
+  {
+    "customerId": "hesitant",
+    "why": "agent note",
+    "weight": 1.0,
+    "negatable": true,
+    "patterns": [
+      "\\b(indecisive|undecided|hesitant|can'?t make up (her|his|their) mind|keeps changing)\\b"
+    ]
+  },
+  {
+    "customerId": "expressive",
+    "why": "reactions",
+    "weight": 1.3,
+    "patterns": [
+      "\\b(oh my (god|gosh)|omg|wow|haha|lol|you won'?t believe|you'?re going to laugh|so funny|craziest|amazing|gorgeous|i love (that|you|it)|embarrassing)\\b"
+    ]
+  },
+  {
+    "customerId": "expressive",
+    "why": "storytelling",
+    "weight": 1.0,
+    "patterns": [
+      "\\b(so first|so we (were|went|just)|and then|so anyway|anyway|long story|let me tell you|here'?s the thing|the (week|day|month) i'?ve had|before i forget|guess what)\\b"
+    ]
+  },
+  {
+    "customerId": "expressive",
+    "why": "rapport",
+    "weight": 0.8,
+    "patterns": [
+      "\\b(where are you (guys )?(located|based|calling from)|you sound (so )?(nice|sweet|like)|lovely voice|how'?s your day)\\b"
+    ]
+  },
+  {
+    "customerId": "expressive",
+    "why": "personal story",
+    "weight": 0.5,
+    "patterns": [
+      "\\b(my (sister|brother|niece|nephew|neighbou?r|daughter|son|dog|cat|husband|wife|mom|dad|trip|vacation)|wedding|vacation|holiday|beach|birthday)\\b"
+    ]
+  },
+  {
+    "customerId": "expressive",
+    "why": "exclamation",
+    "weight": 0.4,
+    "patterns": [
+      "!"
+    ]
+  },
+  {
+    "customerId": "expressive",
+    "why": "agent note",
+    "weight": 1.0,
+    "negatable": true,
+    "patterns": [
+      "\\b(chatty|talkative|rambling|tangent|told me about|long stor(y|ies)|very friendly)\\b"
+    ]
+  },
+  {
+    "customerId": "cooperative",
+    "why": "agreement",
+    "weight": 1.2,
+    "patterns": [
+      "(?<!\\b(if|should|can|do|would) i )\\b(no problem|no worries|go ahead|sounds good|that works|makes sense|got it|perfect|that'?s fine|happy to|take your time|i'?ll hold)\\b"
+    ],
+    "negatable": true
+  },
+  {
+    "customerId": "cooperative",
+    "why": "yes",
+    "weight": 0.6,
+    "negatable": true,
+    "patterns": [
+      "(?<!(not|be|make|quite|really|totally|so|un) )\\b(sure|yep|yes|yeah)\\b"
+    ]
+  },
+  {
+    "customerId": "cooperative",
+    "why": "gives information",
+    "weight": 1.0,
+    "patterns": [
+      "\\b(i have (my|the|it)|(have|got) (the |my )?(order|account|zip|reference|confirmation)|(order|account|reference) (number|#|ending)|here it is|it'?s \\d|ending (in )?\\d)"
+    ]
+  },
+  {
+    "customerId": "cooperative",
+    "why": "already tried steps",
+    "weight": 0.8,
+    "patterns": [
+      "\\b(already (tried|restarted|unplugged|rebooted|reset|checked)|i tried (unplugging|restarting|resetting)|like the (website|app) said)\\b"
+    ]
+  },
+  {
+    "customerId": "cooperative",
+    "why": "ready for next step",
+    "weight": 0.7,
+    "patterns": [
+      "\\b(what('?s| is) next|what (else )?do you need|anything else you need|what do you need me to do)\\b"
+    ]
+  },
+  {
+    "customerId": "cooperative",
+    "why": "thanks",
+    "weight": 0.5,
+    "patterns": [
+      "\\b(thanks|thank you|appreciate (it|that|your))\\b"
+    ]
+  },
+  {
+    "customerId": "cooperative",
+    "why": "agent note",
+    "weight": 1.0,
+    "negatable": true,
+    "patterns": [
+      "\\b(calm|polite|pleasant|easy call|has (the )?info ready|just needs)\\b"
+    ]
+  }
+]

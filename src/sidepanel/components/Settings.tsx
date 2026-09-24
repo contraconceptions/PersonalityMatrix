@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { exportContent, validateContent } from "../../lib/content";
 import { downloadText, today } from "../../lib/download";
 import { getAgent, getCustomer } from "../../lib/matrix";
+import { prepareAi } from "../../lib/nano";
 import type { AgentId, BrandVoice, CustomerId } from "../../lib/types";
 import { clearEvents, loadEvents, summarize, toCsv, type UsageEvent } from "../../lib/usage";
 import { useContent } from "../ContentContext";
+import { useAiAssist } from "../useAiAssist";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -31,10 +33,82 @@ export default function Settings({ onBack, onStartDemo }: Props) {
         </button>
       </section>
 
+      <AiSection />
       <BrandVoiceSection />
       <ContentSection />
       <UsageSection />
     </main>
+  );
+}
+
+function AiSection() {
+  const { content } = useContent();
+  const ai = useAiAssist();
+  const [progress, setProgress] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const download = async () => {
+    setError(null);
+    setProgress(0);
+    ai.setStatus("downloading");
+    try {
+      await prepareAi(content.customerProfiles, setProgress);
+      await ai.setEnabled(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Chrome couldn't prepare the model.");
+    } finally {
+      setProgress(null);
+      await ai.refresh();
+    }
+  };
+
+  let body: JSX.Element;
+  switch (ai.status) {
+    case "checking":
+      body = <p className="muted small">Checking this browser…</p>;
+      break;
+    case "unsupported":
+      body = <p className="hint">Not available in this browser. It needs Chrome 138 or later on desktop.</p>;
+      break;
+    case "unavailable":
+      body = (
+        <p className="hint">
+          Not available on this computer. Chrome needs a graphics card with more than 4 GB of memory (or 16 GB of RAM
+          and 4 CPU cores) and 22 GB of free disk space, and your organization may have turned it off.
+        </p>
+      );
+      break;
+    case "downloadable":
+    case "downloading":
+      body = (
+        <div className="actions-row">
+          <button className="primary" onClick={download} disabled={progress !== null}>
+            {progress === null ? "Download and turn on" : `Downloading… ${Math.round(progress * 100)}%`}
+          </button>
+          <span className="muted small">Chrome downloads its model once. It can take a while.</span>
+        </div>
+      );
+      break;
+    case "available":
+      body = (
+        <label className="toggle">
+          <input type="checkbox" checked={ai.enabled} onChange={(e) => void ai.setEnabled(e.target.checked)} />
+          <span>Ask the on-device AI when a suggestion is unclear</span>
+        </label>
+      );
+      break;
+  }
+
+  return (
+    <section className="panel">
+      <h2>On-device AI (optional)</h2>
+      <p className="hint">
+        Uses Chrome's built-in model to read unclear lines more closely (negation, agent notes, mixed signals) and
+        shows the words it went on. It runs on this computer: what you type isn't sent anywhere or stored.
+      </p>
+      {body}
+      {error && <p className="errors">{error}</p>}
+    </section>
   );
 }
 
@@ -132,7 +206,8 @@ function ContentSection() {
   const [message, setMessage] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
-  const custom = overrides && (overrides.interactionMatrix || overrides.customerProfiles || overrides.triggers);
+  const custom =
+    overrides && (overrides.interactionMatrix || overrides.customerProfiles || overrides.triggers || overrides.cues);
 
   const onFile = async (file: File) => {
     setErrors([]);

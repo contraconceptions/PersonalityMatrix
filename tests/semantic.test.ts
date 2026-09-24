@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import index from "../src/data/exampleEmbeddings.json";
 import examples from "../src/data/customerExamples.json";
 import heldOut from "./fixtures/heldOutUtterances.json";
-import { customers } from "../src/lib/matrix";
+import { cues, customers } from "../src/lib/matrix";
 import { classify, dot, EMBED_OPTIONS, MODEL_ID, type EmbeddingIndex } from "../src/lib/similarity";
 
 const idx = index as EmbeddingIndex;
@@ -58,6 +58,37 @@ describe("classify (synthetic vectors)", () => {
   it("reports none when nothing is similar", () => {
     expect(classify([-1, 0], { ...toy, items: [toy.items[0]] }).confidence).toBe("none");
   });
+
+  it("returns probabilities that sum to 1", () => {
+    const r = classify([0.6, 0.8], toy);
+    expect(r.ranked.reduce((s, x) => s + x.score, 0)).toBeCloseTo(1, 6);
+  });
+
+  it("lets keyword cues tip a close call, and reports them", () => {
+    const v = Math.SQRT1_2;
+    const tie: EmbeddingIndex = { ...toy, items: [toy.items[0], toy.items[2]] };
+    const r = classify([v, v], tie, { text: "I want a supervisor", cues });
+    expect(r.ranked[0].customerId).toBe("demanding");
+    expect(r.cues[0]).toMatchObject({ customerId: "demanding", match: "supervisor" });
+  });
+});
+
+describe("classify (keyword-only, model unavailable)", () => {
+  it("suggests from cues alone when there's no embedding", () => {
+    const r = classify(null, idx, { text: "This is ridiculous, I want a supervisor right now", cues });
+    expect(r.keywordOnly).toBe(true);
+    expect(r.ranked[0].customerId).toBe("demanding");
+    expect(r.confidence).toBe("clear");
+  });
+
+  it("says nothing without cues", () => {
+    expect(classify(null, idx, { text: "hello, can you hear me", cues }).confidence).toBe("none");
+  });
+
+  it("gets the demo lines right from keywords alone", async () => {
+    const { scenarios } = await import("../src/lib/demo");
+    for (const s of scenarios) expect(classify(null, idx, { text: s.customerLine, cues }).ranked[0].customerId, s.id).toBe(s.expectedCustomerId);
+  });
 });
 
 // Real-model accuracy check on lines the index has never seen. Needs `npm run setup-model`.
@@ -80,7 +111,7 @@ describe.skipIf(!modelPresent)("classify (real model, held-out lines)", () => {
     let top2 = 0;
     const misses: string[] = [];
     heldOut.forEach((h, i) => {
-      const { ranked } = classify(vecs[i], idx);
+      const { ranked } = classify(vecs[i], idx, { text: h.text, cues });
       if (ranked[0].customerId === h.expected) top1++;
       else misses.push(`${h.expected} → ${ranked[0].customerId}: ${h.text}`);
       if (ranked.slice(0, 2).some((r) => r.customerId === h.expected)) top2++;
@@ -95,7 +126,7 @@ describe.skipIf(!modelPresent)("classify (real model, held-out lines)", () => {
     const { scenarios } = await import("../src/lib/demo");
     const vecs = await embed(scenarios.map((s) => s.customerLine));
     scenarios.forEach((s, i) => {
-      const r = classify(vecs[i], idx);
+      const r = classify(vecs[i], idx, { text: s.customerLine, cues });
       expect(r.ranked[0].customerId, s.id).toBe(s.expectedCustomerId);
       expect(r.confidence, s.id).toBe("clear");
     });
