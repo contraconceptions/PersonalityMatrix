@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { combine, commitChoice, current, emptyCall, type CallMemory } from "../../lib/callMemory";
+import { combine, commit, commitChoice, current, emptyCall, type CallMemory } from "../../lib/callMemory";
+import { cleanCaptured, isCaptureMessage } from "../../lib/capture";
 import { embed, onStatus, warmUp, type ModelStatus } from "../../lib/embedClient";
 import { getCustomer } from "../../lib/matrix";
 import { CALM, detectMood, moodTrend, type Mood, type MoodTrend } from "../../lib/mood";
 import { aiClassify, type AiResult } from "../../lib/nano";
 import { classify, type Classification } from "../../lib/similarity";
 import type { CustomerId } from "../../lib/types";
+import type { SuggestionAtPick } from "../../lib/usage";
 import { useContent } from "../ContentContext";
 import { useAiAssist } from "../useAiAssist";
 
@@ -15,7 +17,8 @@ const DEBOUNCE_MS = 350;
 const AI_DELAY_MS = 500;
 
 interface Props {
-  onSuggest: (id: CustomerId | null) => void;
+  /** The suggestion currently shown (outlined in the quick-pick grid, and logged with the agent's pick). */
+  onSuggest: (s: SuggestionAtPick | null) => void;
   onAccept: (id: CustomerId) => void;
   /** "New call" clears the call's history; the parent clears the selected customer type. */
   onNewCall?: () => void;
@@ -23,6 +26,8 @@ interface Props {
   presetText?: string;
   /** Allow the optional on-device AI read (off in demos, which should be repeatable). */
   allowAi?: boolean;
+  /** Accept customer messages from chat auto-capture (off in demos). */
+  allowCapture?: boolean;
   /** The customer's mood on the latest line, and how it's moving. */
   onMood?: (mood: Mood, trend: MoodTrend | null) => void;
 }
@@ -45,7 +50,15 @@ interface AiState {
 
 // Free-text box: the agent types or pastes what the customer said (or a quick note about them) and gets
 // a suggested type. Everything runs on this device; the text is never stored or sent anywhere.
-export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, onMood, presetText, allowAi = true }: Props) {
+export default function DescribeCustomer({
+  onSuggest,
+  onAccept,
+  onNewCall,
+  onMood,
+  presetText,
+  allowAi = true,
+  allowCapture = true,
+}: Props) {
   const { content, exampleIndex } = useContent();
   const ai = useAiAssist();
   const [text, setText] = useState("");
@@ -65,6 +78,13 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, onMoo
   contentRef.current = content;
   const indexRef = useRef(exampleIndex);
   indexRef.current = exampleIndex;
+  const textRef = useRef(text);
+  textRef.current = text;
+  const shownRef = useRef<Shown | null>(null);
+  /** The text last put in the box by chat capture (so a newer message may replace it). */
+  const capturedRef = useRef<string | null>(null);
+  /** Chat messages that arrived while the agent was typing; they still count toward the call. */
+  const [capturedInBackground, setCapturedInBackground] = useState(0);
 
   useEffect(() => {
     warmUp();
@@ -94,8 +114,43 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, onMoo
   }
 
   function show(line: Classification, forText: string) {
-    setShown({ result: combine(line, memoryRef.current), line, forText });
+    const next = { result: combine(line, memoryRef.current), line, forText };
+    shownRef.current = next;
+    setShown(next);
   }
+
+  /** Add a line to the call's evidence without selecting a type (captured lines the agent didn't act on). */
+  function addToCall(line: Classification, forText: string) {
+    setMemory((m) => commit(m, line));
+    setMoodLog((log) => [detectMood(forText, contentRef.current.moods), ...log].slice(0, 20));
+  }
+
+  // Chat auto-capture: new customer messages from the configured chat page (this window only).
+  useEffect(() => {
+    if (!allowCapture || typeof chrome === "undefined" || !chrome.runtime?.onMessage) return;
+    let myWindow: number | undefined;
+    chrome.windows?.getCurrent().then((w) => (myWindow = w.id)).catch(() => {});
+    const listener = (msg: unknown, sender: chrome.runtime.MessageSender) => {
+      if (!isCaptureMessage(msg)) return;
+      if (myWindow !== undefined && sender.tab && sender.tab.windowId !== myWindow) return;
+      const captured = cleanCaptured(msg.text);
+      if (!captured) return;
+      const typed = textRef.current.trim();
+      if (typed && typed !== capturedRef.current) {
+        // The agent is typing: don't overwrite. The message still counts toward the call.
+        void classifyText(captured).then((line) => addToCall(line, captured));
+        setCapturedInBackground((n) => n + 1);
+        return;
+      }
+      // Replacing an earlier captured line the agent didn't act on: keep its evidence.
+      const prev = shownRef.current;
+      if (typed && prev?.forText === typed) addToCall(prev.line, typed);
+      capturedRef.current = captured;
+      setText(captured);
+    };
+    chrome.runtime.onMessage.addListener(listener);
+    return () => chrome.runtime.onMessage.removeListener(listener);
+  }, [allowCapture]);
 
   useEffect(() => {
     const trimmed = text.trim();
@@ -162,7 +217,9 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, onMoo
 
   useEffect(() => onMood?.(mood, trend), [mood.id, mood.heat, trend]);
 
-  useEffect(() => onSuggest(primary), [primary]);
+  const by: SuggestionAtPick["by"] = aiPick ? "ai" : shown?.line.keywordOnly ? "keywords" : "model";
+  const confidence = shown?.result.confidence ?? "none";
+  useEffect(() => onSuggest(primary ? { suggested: primary, confidence, by } : null), [primary, confidence, by]);
 
   const name = (id: CustomerId) => getCustomer(id, content)?.name.replace(/^The /, "");
   const hint = (id: CustomerId) => {
@@ -171,6 +228,7 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, onMoo
   };
 
   const accept = (id: CustomerId, line: Classification | null = shown?.line ?? null) => {
+    capturedRef.current = null;
     if (line) setMemory((m) => commitChoice(m, line, id));
     if (long) setMoodLog((log) => [detectMood(trimmed, contentRef.current.moods), ...log].slice(0, 20));
     onAccept(id);
@@ -191,6 +249,8 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, onMoo
   const newCall = () => {
     setMemory(emptyCall());
     setMoodLog([]);
+    setCapturedInBackground(0);
+    capturedRef.current = null;
     setText("");
     setAiState(null);
     onNewCall?.();
@@ -246,7 +306,7 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, onMoo
           <span className="muted">Stays on this device.</span>
         )}
       </p>
-      {(why.length > 0 || callLines > 0 || showMood || (primary && aiNow?.pending) || (primary && shown?.line.keywordOnly && !aiPick)) && (
+      {(why.length > 0 || callLines > 0 || showMood || capturedInBackground > 0 || (long && capturedRef.current === trimmed) || (primary && aiNow?.pending) || (primary && shown?.line.keywordOnly && !aiPick)) && (
         <p className="describe-meta">
           {showMood && (
             <span className={`mood-chip mood-${mood.id}`} title={mood.hits.map((h) => h.match).join(", ") || undefined}>
@@ -260,6 +320,12 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, onMoo
               {why.map((w) => (
                 <mark key={w}>{w}</mark>
               ))}
+            </span>
+          )}
+          {long && capturedRef.current === trimmed && <span className="from-chat">from chat</span>}
+          {capturedInBackground > 0 && (
+            <span>
+              {capturedInBackground} chat {capturedInBackground === 1 ? "message" : "messages"} added while you typed
             </span>
           )}
           {primary && shown?.line.keywordOnly && !aiPick && <span>keywords only</span>}

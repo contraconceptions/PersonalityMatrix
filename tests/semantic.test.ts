@@ -4,14 +4,14 @@ import index from "../src/data/exampleEmbeddings.json";
 import examples from "../src/data/customerExamples.json";
 import heldOut from "./fixtures/heldOutUtterances.json";
 import { cues, customers } from "../src/lib/matrix";
-import { classify, dot, EMBED_OPTIONS, MODEL_ID, type EmbeddingIndex } from "../src/lib/similarity";
+import { classify, dot, EMBED_OPTIONS, MODEL_DTYPE, MODEL_FILE, MODEL_ID, modelInput, type EmbeddingIndex } from "../src/lib/similarity";
 
 const idx = index as EmbeddingIndex;
 
 describe("embedding index", () => {
   it("was built with the runtime model", () => {
     expect(idx.model).toBe(MODEL_ID);
-    expect(idx.dims).toBe(384);
+    expect(idx.dims).toBe(idx.items[0].vector.length);
   });
 
   it("covers every customer archetype and every example line", () => {
@@ -92,7 +92,7 @@ describe("classify (keyword-only, model unavailable)", () => {
 });
 
 // Real-model accuracy check on lines the index has never seen. Needs `npm run setup-model`.
-const modelPresent = existsSync(`public/models/${MODEL_ID}/onnx/model_quantized.onnx`);
+const modelPresent = existsSync(`public/models/${MODEL_ID}/${MODEL_FILE}`);
 
 describe.skipIf(!modelPresent)("classify (real model, held-out lines)", () => {
   let embed: (texts: string[]) => Promise<number[][]>;
@@ -101,8 +101,8 @@ describe.skipIf(!modelPresent)("classify (real model, held-out lines)", () => {
     const { env, pipeline } = await import("@huggingface/transformers");
     env.allowRemoteModels = false;
     env.localModelPath = "public/models/";
-    const extractor = await pipeline("feature-extraction", MODEL_ID, { dtype: "q8" });
-    embed = async (texts) => (await extractor(texts, { ...EMBED_OPTIONS })).tolist() as number[][];
+    const extractor = await pipeline("feature-extraction", MODEL_ID, { dtype: MODEL_DTYPE });
+    embed = async (texts) => (await extractor(texts.map(modelInput), { ...EMBED_OPTIONS })).tolist() as number[][];
   }, 60_000);
 
   it("gets at least 80% of held-out lines right (top-1) and 95% within top-2", async () => {

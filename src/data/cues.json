@@ -51,7 +51,7 @@
     "why": "helplessness",
     "weight": 1.1,
     "patterns": [
-      "\\b(i (don'?t|do not) know what (to do|i'?m doing)|nowhere (else )?to turn|(don'?t|do not) know who else)\\b",
+      "\\b(i (don'?t|do not) know what (to do|i'?m doing)|nowhere (else )?to turn|(don'?t|do not) know who else|no idea what (to do|happens|i'?m (going to|gonna) do))\\b",
       "\\b(need (someone|somebody) to help|please (help|don'?t hang up)|i can'?t (deal|cope|handle))\\b"
     ]
   },

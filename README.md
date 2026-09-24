@@ -34,6 +34,7 @@ npm run build      # type-check + build the extension into dist/ (~50 MB incl. m
 npm run embed      # re-run after editing src/data/customerExamples.json
 npm run eval       # recognition yardstick: classifier comparison + held-out/challenge accuracy
 npm run prepare-examples -- labeled.csv client-data   # client lines → import file + held-out set
+npm run benchmark-models   # compare embedding models (downloads each; add --examples/--heldout for client data)
 npm run package    # build + zip to release/personality-matrix-<version>.zip for clients
 ```
 
@@ -59,7 +60,13 @@ Store. Set `version` in `public/manifest.json` before packaging a new client bui
 - **Demo:** five scripted sample calls for client presentations. You can also start it from the first-run screen ("Watch a demo"). Use `→` / `←` to step through and `Esc` to exit. Demos don't change the saved agent and aren't logged.
 - **Brand voice:** word swaps (e.g. customer → patient) and company "never say" phrases.
 - **Guidance content:** export the full guidance as JSON, edit it, and import it back. Imports are validated first. Reset returns to the built-in guidance.
-- **Usage on this device:** which customer types come up and which phrases get copied, never what customers said. Export it as CSV for QA coaching, or clear it.
+- **On-device AI (optional):** Chrome's built-in model takes a closer look at unclear lines (Chrome 138+ on capable hardware).
+- **Chat capture (optional):** for chat and email teams. New customer messages on the client's chat or CRM page
+  fill the box automatically. Set the site and two CSS selectors, and Chrome asks for access to that one site.
+  **Check on the open tab** confirms the selectors work. **Turn off** gives the access back.
+- **Usage on this device:** which customer types come up, which phrases get copied, and how often agents went
+  with the suggestion (with the most frequent changes, e.g. Demanding → Distressed). Never what customers
+  said. Export it as CSV for QA coaching, or clear it.
 
 ## Layout
 
@@ -67,6 +74,7 @@ Store. Set `version` in `public/manifest.json` before packaging a new client bui
 public/manifest.json        MV3 manifest (copied to dist/); CSP allows WASM for the model
 sidepanel.html              Side panel entry
 src/background/             Service worker: opens the panel on toolbar click (ephemeral, no state)
+src/content/capture.ts      Chat-capture content script (registered at runtime, one site only)
 src/data/*.json             Archetypes, 36-node matrix, trigger phrases, quiz, demo scenarios,
                             example customer lines + their precomputed embeddings
 src/lib/matrix.ts           resolveGuidance(): node > customer baseline > global triggers, then brand voice
@@ -76,7 +84,8 @@ src/lib/storage.ts          chrome.storage.local with localStorage fallback
 src/lib/usage.ts            Local usage log (type ids and copied phrases only) + CSV export
 src/sidepanel/              React app, the embedding Web Worker and the shared content context
 src/sidepanel/components/   Onboarding + quiz, quick-pick, suggestion box, guidance, demo bar, Settings
-scripts/                    fetch-model, embed, package
+scripts/                    fetch-model, embed, eval, benchmark-models, prepare-examples, package
+training/setfit/            Optional fine-tuning of the model on a client's labeled lines (Python)
 tests/                      Vitest (+ held-out lines for accuracy in tests/fixtures/)
 ```
 
@@ -87,8 +96,11 @@ tests/                      Vitest (+ held-out lines for accuracy in tests/fixtu
 - What the agent types to get a suggestion stays in memory and is never stored or logged.
 - The optional on-device AI uses Chrome's built-in model on this computer. Chrome downloads the model
   from Google once; no text is sent.
-- Saved on the device only: the agent's archetype, supervisor content overrides and the usage log
-  (customer-type picks and copied phrases). Settings → Usage can export or clear the log.
+- Chat capture (off by default) reads new customer messages on one configured site and passes them to the
+  panel in memory. They aren't stored or sent anywhere.
+- Saved on the device only: the agent's archetype, supervisor content overrides (including any imported,
+  anonymized example lines) and the usage log. The log holds customer-type picks, what was suggested at the
+  time, and copied phrases. Settings → Usage can export or clear it.
 
 ## Authoring matrix content
 

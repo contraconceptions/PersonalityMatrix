@@ -208,6 +208,13 @@ Steps 1–5 were implemented on 2026-09-24. The status of each is at the end of 
    isn't calm, the guidance opens with a "Right now" block: a tip and copyable de-escalation phrases,
    importable per client. Style keeps building across the call while mood follows the latest line. On the
    fixture lines, every Expressive and Cooperative line reads calm, and 13 of 21 Distressed lines read anxious.
+8. **Correction logging** (R1). *Done:* each pick logs the suggestion showing at the time (type ids and
+   confidence only); Settings → Usage shows agreement by confidence and the most frequent overrides.
+9. **Model benchmark and fine-tuning** (R4). *Tooling done:* `npm run benchmark-models` (fits the temperature
+   per model) and `training/setfit/train.py` (SetFit → quantized ONNX as `local/<name>`); the model is chosen in
+   `src/data/model.json`. Needs real client lines and a machine that can download models.
+10. **Chat auto-capture** (R5). *Done, off by default:* Settings → Chat capture; one site, runtime permission,
+   history skipped, the agent confirms. Phone speech-to-text is not built (legal gate).
 
 ## Not verified yet
 

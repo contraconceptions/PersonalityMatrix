@@ -27,6 +27,8 @@ npm run embed         # REQUIRED after editing src/data/customerExamples.json (a
 npm run eval          # recognition yardstick (see docs/research/recognition-analysis.md)
 npm run eval -- --examples client-data/client-examples.json --heldout client-data/client-heldout.json
 npm run prepare-examples -- labeled.csv client-data   # client CSV → import file + held-out set (client-data/ is git-ignored)
+npm run benchmark-models -- --models id[:prefix],…   # compare embedding models; PM_FAKE_EMBEDDINGS=1 for a no-download dry run
+python training/setfit/train.py --examples … --name X  # optional fine-tune → public/models/local/X (see file header)
 npm run package       # build + zip → release/personality-matrix-<version from public/manifest.json>.zip
 ```
 
@@ -37,10 +39,14 @@ hasn't been populated, so run `npm run setup-model` first to get the full suite.
 
 ## Architecture
 
-**Two Vite entry points** (`vite.config.ts`): `sidepanel.html` (the React app) and
-`src/background/index.ts` (emitted as `background.js`). The service worker only opens the panel on
-toolbar click. It is ephemeral, so never keep state in its module scope. `public/manifest.json` is
-copied verbatim. Its CSP allows `'wasm-unsafe-eval'` for ONNX Runtime.
+**Three Vite entry points** (`vite.config.ts`): `sidepanel.html` (the React app), `src/background/index.ts`
+(emitted as `background.js`) and `src/content/capture.ts` (emitted as `capture.js`). The service worker only
+opens the panel on toolbar click. It is ephemeral, so never keep state in its module scope. `capture.js` is the
+chat-capture content script. Settings registers it at runtime with `chrome.scripting.registerContentScripts`
+for one site, after `chrome.permissions.request` (the manifest has `scripting` plus `optional_host_permissions`).
+It must stay self-contained (no imports), because content scripts aren't modules. It posts
+`{ type: "pm-capture", text }`, and `DescribeCustomer` accepts it only from tabs in its own window.
+`public/manifest.json` is copied verbatim. Its CSP allows `'wasm-unsafe-eval'` for ONNX Runtime.
 
 **Guidance resolution** (`src/lib/matrix.ts`): `resolveGuidance(agentId, customerId, content)` merges
 the authored matrix node (from `interactionMatrix.json`, 36 nodes) over the customer baseline over
@@ -72,6 +78,13 @@ separate from the accumulated style. It drives the "Right now" block in `MatrixO
 Client example lines (`customerExamples` import section, `src/lib/clientExamples.ts`) are embedded in the
 browser at import time and stored as `clientIndex`. `ContentContext` exposes the merged `exampleIndex`, which
 UI code must use instead of importing `exampleEmbeddings.json` directly.
+
+**Model config** (`src/data/model.json`: id, dtype, input prefix, calibrated temperature) is the single
+source for `similarity.ts`, the worker, `fetch-model.mjs`, `embed.mjs`, eval and tests. Switching models means
+editing it, then `npm run setup-model && npm run embed`. Ids starting with `local/` are never downloaded.
+
+**Usage log / correction log** (`src/lib/usage.ts`): each `select` event carries the suggestion showing at
+that moment (`suggested`, `confidence`, `by`), and Settings → Usage summarizes how often agents agreed.
 
 **Storage** (`src/lib/storage.ts`): `chrome.storage.local` in the extension, `localStorage` under
 `npm run dev`. Always go through `getJSON`/`setJSON`/`removeKey`.

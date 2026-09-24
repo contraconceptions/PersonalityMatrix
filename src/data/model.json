@@ -1,0 +1,6 @@
+{
+  "id": "Xenova/all-MiniLM-L6-v2",
+  "dtype": "q8",
+  "prefix": "",
+  "temperature": 0.04
+}

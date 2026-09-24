@@ -240,11 +240,15 @@ the pilot (§3) and real example lines (§4).
 today's matcher, maps trigger words to the research, compares approaches (including Chrome's built-in
 Gemini Nano and bundled LLMs) and recommends an order of work.
 
-### R1. Measure first (small, about 1 day) — harness done
+### R1. Measure first (small, about 1 day) — done
 **Done:** `npm run eval` (leave-one-out classifier comparison; held-out + challenge scoring with a
 confusion table when the model is present) and `tests/fixtures/challengeUtterances.json`.
 First result: the runtime top-3 rule gets 74% top-1 leave-one-out vs 86% for a class centroid.
-Still open: the correction logging below.
+**Correction logging, done:** every pick records the suggestion that was showing (`suggested`,
+`confidence`, `by`: model / keywords / ai), with no text. Settings → Usage shows how often agents went with
+it, split by confidence, plus the most frequent changes. The CSV has `suggested`, `suggestion_confidence`,
+`suggested_by` and `agreed` columns. Caveat: agreement isn't accuracy, since agents may accept without checking.
+Use it to spot patterns, like a type pair that's often overridden.
 Nothing below can be shown to be an improvement without a yardstick.
 - **Evaluation harness:** extend `tests/semantic.test.ts` (or a `npm run eval` script) to print per-type
   precision/recall, a confusion matrix ("Hesitant → Distressed 30%") and a confidence calibration check
@@ -297,7 +301,14 @@ Transactional Analysis emotional state, which shifts line by line.
   ("never", "supervisor" → Demanding). This builds agent trust and teaches the cues.
 - Tests: cue detection, combined scoring, harness comparison recorded in the commit message.
 
-### R4. Better model, once real data exists (medium to large, 2–5 days)
+### R4. Better model, once real data exists (medium to large, 2–5 days) — tooling done, needs real data
+**Done:** `src/data/model.json` is the single model config (id, dtype, prefix, temperature).
+`npm run benchmark-models` downloads each candidate and reports size, speed, the fitted temperature and
+accuracy (leave-one-out plus the held-out, challenge and client held-out sets). It includes bge-small, gte-small
+and e5-small (with its "query: " prefix). `training/setfit/train.py` fine-tunes on labeled lines and exports
+quantized ONNX to `public/models/local/<name>/`, which the benchmark and `model.json` accept as `local/<name>`.
+**Not run here** (Hugging Face was blocked where this was built). The benchmark was checked with stand-in
+embeddings, and the training script was checked for syntax and against the SetFit/Optimum docs only.
 - **Benchmark small embedding models** of similar size (bge-small-en-v1.5, e5-small-v2, gte-small; roughly
   30–35 MB quantized, to be confirmed) with R1's harness on **real** held-out lines. Swap only if it clearly wins.
   Re-check the ONNX Runtime and transformers.js gotchas in §1 when changing models.
@@ -306,7 +317,19 @@ Transactional Analysis emotional state, which shifts line by line.
   This is usually the largest accuracy jump, but it isn't worth doing on synthetic data.
 - Keep a per-client model or example set optional. The default build stays generic.
 
-### R5. Remove the typing (larger, per client; biggest usability gain)
+### R5. Remove the typing (larger, per client; biggest usability gain) — chat done, phone gated
+**Chat / email, done:** Settings → Chat capture (site + conversation selector + customer-message selector).
+It works like this:
+- Chrome grants access to that one site at runtime.
+- A dynamically registered content script (`src/content/capture.ts`) sends each new customer message to the
+  panel. History already on the page is skipped.
+- The captured line fills the box, marked "from chat", and the agent still confirms.
+- It never overwrites what the agent is typing: those messages count toward the call in the background.
+- **Turn off** unregisters the script and gives the site access back.
+
+Tested with a fake chat page and a stubbed `chrome` API, and the built extension loads cleanly. Not tested
+end to end in real Chrome, because the automated browser can't click the permission prompt: do that once by hand.
+**Phone:** not built. It's under the Phase 4 legal gate (§6).
 - **Chat / email teams:** a content script reads new customer messages from the client's CRM or chat page and
   feeds them to the pipeline automatically (the agent still confirms the suggestion). Needs per-client DOM
   selectors, host permissions scoped to that site only, and a clear on/off control. Estimate: 2–4 days per
@@ -328,8 +351,8 @@ Transactional Analysis emotional state, which shifts line by line.
 2. Settings PIN (§5, option A), if the pilot client wants it.
 3. Run `npm run setup-model && npm test && npm run eval` once on a machine with the model: the recognition
    work from 2026-09-24 hasn't been measured with the real model yet (see `research/recognition-analysis.md`).
-4. Recognition R1 correction logging, so the pilot produces accuracy data. (R2, R3 and the optional Gemini
-   Nano read are built.)
+4. Try chat capture by hand once in real Chrome (Settings → Chat capture → Turn on → accept the prompt).
+   R1–R3, the optional Gemini Nano read and R5 chat capture are built.
 5. Collect and anonymize real example lines (§4 protocol, `npm run prepare-examples`) during pilot setup,
    then import them.
 6. Pilot (§3).

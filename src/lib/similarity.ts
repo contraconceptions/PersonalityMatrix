@@ -1,9 +1,21 @@
+import modelConfig from "../data/model.json";
 import { detectCues, type CueHit } from "./cues";
 import type { CueFamily, CustomerId } from "./types";
 
-/** Must match scripts/embed.mjs — the index is invalid if these drift apart. */
-export const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
+// The embedding model, from src/data/model.json (shared with scripts/fetch-model.mjs and scripts/embed.mjs).
+// Changing it means: npm run setup-model, npm run embed, then npm test / npm run eval. See
+// docs/research/recognition-analysis.md ("Changing the model").
+export const MODEL_ID: string = modelConfig.id;
+export const MODEL_DTYPE = modelConfig.dtype as "q8" | "fp32" | "fp16" | "q4";
+/** Some models expect a fixed prefix on every input (e5: "query: "). */
+export const MODEL_PREFIX: string = modelConfig.prefix;
 export const EMBED_OPTIONS = { pooling: "mean", normalize: true } as const;
+
+/** Where transformers.js looks for the ONNX weights for this dtype (see ONNX_FILE in scripts/fetch-model.mjs). */
+export const MODEL_FILE = `onnx/${{ fp32: "model", fp16: "model_fp16", q8: "model_quantized", q4: "model_q4" }[MODEL_DTYPE]}.onnx`;
+
+/** The text as the model should see it. */
+export const modelInput = (text: string) => MODEL_PREFIX + text;
 
 export interface EmbeddingIndex {
   model: string;
@@ -37,12 +49,16 @@ export interface ClassifyOptions {
   /** The typed line; enables keyword cues. */
   text?: string;
   cues?: CueFamily[];
+  /** Override the model's calibrated temperature (used when benchmarking other models). */
+  temperature?: number;
 }
 
 // Calibrated by leave-one-out on the example vectors (scripts/eval.mjs; docs/research/recognition-analysis.md).
 // Each type is represented by the normalized mean of its examples (centroid), which beat nearest-neighbour
 // voting 86% vs 74% leave-one-out. Logit = cosine / TEMPERATURE + CUE_WEIGHT × cue score.
-const TEMPERATURE = 0.04;
+// The temperature depends on the model's cosine spread, so it lives in model.json
+// (`npm run benchmark-models` fits it for other models).
+const TEMPERATURE: number = modelConfig.temperature;
 const CUE_WEIGHT = 1;
 /** Keyword-only mode (model not loaded): cues are the only evidence, so they count a bit more. */
 const CUE_ONLY_WEIGHT = 1.5;
@@ -108,7 +124,7 @@ export function rank(
 export function classify(
   query: ArrayLike<number> | null,
   index: EmbeddingIndex,
-  { text, cues: families }: ClassifyOptions = {},
+  { text, cues: families, temperature = TEMPERATURE }: ClassifyOptions = {},
 ): Classification {
   const cents = centroids(index);
   const types = [...cents.keys()];
@@ -125,7 +141,7 @@ export function classify(
   }
 
   const cos = types.map((t) => dot(query, cents.get(t)!));
-  const lp = logSoftmax(types.map((t, i) => cos[i] / TEMPERATURE + CUE_WEIGHT * cue(t)));
+  const lp = logSoftmax(types.map((t, i) => cos[i] / temperature + CUE_WEIGHT * cue(t)));
 
   // The closest example per type, shown as a tooltip ("Similar to: …").
   const examples: Partial<Record<CustomerId, string>> = {};

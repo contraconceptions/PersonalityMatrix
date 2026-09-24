@@ -12,7 +12,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { runnerImport } from "vite";
 
 const { module: similarity } = await runnerImport("./src/lib/similarity.ts");
-const { classify, dot, EMBED_OPTIONS, MODEL_ID } = similarity;
+const { classify, dot, EMBED_OPTIONS, MODEL_DTYPE, MODEL_FILE, MODEL_ID, modelInput } = similarity;
 
 const cues = JSON.parse(readFileSync("src/data/cues.json", "utf8"));
 
@@ -104,7 +104,7 @@ function scoreCalls(label, vectorsFor) {
 }
 scoreCalls("keywords only", () => null);
 
-if (!existsSync(`public/models/${MODEL_ID}/onnx/model_quantized.onnx`)) {
+if (!existsSync(`public/models/${MODEL_ID}/${MODEL_FILE}`)) {
   console.log("\nModel not found: run `npm run setup-model` to also score the held-out and challenge fixtures.");
   if (examplesFile || heldOutFile) console.log("(--examples and --heldout need the model too.)");
   process.exit(0);
@@ -113,7 +113,8 @@ if (!existsSync(`public/models/${MODEL_ID}/onnx/model_quantized.onnx`)) {
 const { env, pipeline } = await import("@huggingface/transformers");
 env.allowRemoteModels = false;
 env.localModelPath = "public/models/";
-const extractor = await pipeline("feature-extraction", MODEL_ID, { dtype: "q8" });
+const pipe = await pipeline("feature-extraction", MODEL_ID, { dtype: MODEL_DTYPE });
+const extractor = (input, opts) => pipe(Array.isArray(input) ? input.map(modelInput) : modelInput(input), opts);
 
 function scoreSet(file, set, vecs, idx, label) {
   const confusion = Object.fromEntries(TYPES.map((t) => [t, Object.fromEntries(TYPES.map((u) => [u, 0]))]));

@@ -60,7 +60,9 @@ profiles and matrix nodes merge by key, while triggers and brand voice replace t
 - [x] Inference in a Web Worker (~0.5 s model load, ~10 ms per suggestion)
 - [ ] Real (anonymized) client call lines: tooling done (`npm run prepare-examples` → import in Settings, no rebuild); needs client data
 - [x] Recognition: eval harness, centroid rule, keyword cues + "why", per-call style, per-line mood, optional Gemini Nano (2026-09-24)
-- [ ] Recognition R1 correction logging, R4 (better model / fine-tune on real data), R5 (auto-capture): see `NEXT-STEPS.md` §8
+- [x] Recognition R1 correction logging (suggested vs chosen, in Settings → Usage and the CSV)
+- [x] Recognition R5 for chat and email: optional chat capture, one site, runtime permission (phone STT stays behind the Phase 4 legal gate)
+- [ ] Recognition R4: tooling built (`npm run benchmark-models`, `training/setfit/`); run it once real client lines exist
 
 ### Phase 3 — Admin & analytics (local) ✅
 - [x] Demo mode: 5 scripted calls (`src/data/demoScenarios.json`) played through the real suggestion model, with a coaching note per call; → / ← / Esc; never saves the agent or logs usage. Start from onboarding ("Watch a demo") or Settings

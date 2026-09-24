@@ -1,0 +1,4 @@
+setfit>=1.1
+datasets>=2.19
+optimum[onnxruntime]>=1.21
+torch>=2.2

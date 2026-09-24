@@ -124,10 +124,37 @@ describe("usage log", () => {
 
   it("exports CSV with quoting and formula-injection protection", () => {
     const lines = toCsv(events).trimEnd().split("\r\n");
-    expect(lines[0]).toBe("timestamp,event,agent,customer,source,phrase");
+    expect(lines[0]).toBe("timestamp,event,agent,customer,source,phrase,suggested,suggestion_confidence,suggested_by,agreed");
     expect(lines).toHaveLength(6);
-    expect(lines[2]).toBe(`2026-09-23T10:00:05.000Z,copy,sage,demanding,,"Here's what we know, ""exactly""."`);
-    expect(lines[5].endsWith(",'=HYPERLINK(evil)")).toBe(true);
+    expect(lines[2]).toBe(`2026-09-23T10:00:05.000Z,copy,sage,demanding,,"Here's what we know, ""exactly"".",,,,`);
+    expect(lines[5].endsWith(",'=HYPERLINK(evil),,,,")).toBe(true);
+  });
+
+  describe("suggestion vs. agent's pick (correction log)", () => {
+    const picks: UsageEvent[] = [
+      { t: "1", type: "select", agentId: "sage", customerId: "demanding", source: "suggestion", suggested: "demanding", confidence: "clear", by: "model" },
+      { t: "2", type: "select", agentId: "sage", customerId: "distressed", source: "click", suggested: "demanding", confidence: "close", by: "model" },
+      { t: "3", type: "select", agentId: "sage", customerId: "distressed", source: "key", suggested: "demanding", confidence: "close", by: "keywords" },
+      { t: "4", type: "select", agentId: "sage", customerId: "hesitant", source: "click" },
+    ];
+
+    it("counts agreement overall and by confidence, and the most frequent overrides", () => {
+      const s = summarize(picks).suggestions;
+      expect(s).toMatchObject({ shown: 3, agreed: 1 });
+      expect(s.byConfidence.clear).toEqual({ shown: 1, agreed: 1 });
+      expect(s.byConfidence.close).toEqual({ shown: 2, agreed: 0 });
+      expect(s.topOverrides).toEqual([{ suggested: "demanding", chosen: "distressed", count: 2 }]);
+    });
+
+    it("exports the suggestion columns, and leaves them empty when nothing was suggested", () => {
+      const lines = toCsv(picks).trimEnd().split("\r\n");
+      expect(lines[2]).toBe("2,select,sage,distressed,click,,demanding,close,model,no");
+      expect(lines[4]).toBe("4,select,sage,hesitant,click,,,,,");
+    });
+
+    it("stores no text beyond type ids", () => {
+      expect(JSON.stringify(picks.slice(0, 3))).not.toMatch(/"(text|line|said)"/);
+    });
   });
 });
 

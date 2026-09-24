@@ -42,7 +42,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const value = useMemo<ContentState>(() => {
     const ex = overrides?.customerExamples;
     // Only use stored vectors that match the imported lines.
-    const usable = ex && clientIndex?.hash === hashExamples(ex) ? clientIndex : null;
+    // Vectors from another model (after a model switch) don't fit either: the lines must be learned again.
+    const usable = ex && clientIndex?.hash === hashExamples(ex) && clientIndex.model === builtInIndex.model ? clientIndex : null;
     return {
       content: mergeContent(overrides),
       overrides,

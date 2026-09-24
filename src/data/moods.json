@@ -21,7 +21,7 @@
         "why": "helplessness",
         "weight": 1.0,
         "patterns": [
-          "\\b(i (don'?t|do not) know what to do|nowhere (else )?to turn|please help|i can'?t (deal|cope|handle)|what am i (going to|gonna) do)\\b"
+          "\\b(i (don'?t|do not) know what to do|nowhere (else )?to turn|please help|i can'?t (deal|cope|handle)|what am i (going to|gonna) do|no idea what (to do|happens|i'?m (going to|gonna) do))\\b"
         ]
       },
       {
