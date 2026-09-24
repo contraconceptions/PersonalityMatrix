@@ -52,6 +52,16 @@ describe("detectCues", () => {
     expect(top("i dont know what to do they said theyll cut the water off")).toBe("distressed");
   });
 
+  it("reads a calm, negated-emotion fact request as analytical", () => {
+    expect(top("I'm not upset, I just want to understand how you got to that number")).toBe("analytical");
+    expect(whys("I just need to know when the refund posts")).toContain("analytical:calm fact-finding");
+  });
+
+  it("treats job and income loss as high stakes", () => {
+    expect(whys("I just lost my job and can't afford this")).toContain("distressed:high stakes");
+    expect(whys("we're behind on rent")).toContain("distressed:high stakes");
+  });
+
   it("counts each family once and reports the matched words", () => {
     const r = detectCues("supervisor! supervisor! get me a supervisor", cues);
     expect(r.hits.filter((h) => h.why === "escalation demand")).toHaveLength(1);

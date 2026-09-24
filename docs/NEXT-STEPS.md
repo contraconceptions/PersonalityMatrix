@@ -267,8 +267,9 @@ Nothing below can be shown to be an improvement without a yardstick.
 - per-client example import plus `npm run prepare-examples`;
 - the optional Gemini Nano read.
 
-See the plan in `research/recognition-analysis.md`. Still open: R1 correction logging, R4 and R5, and a
-real-model run of `npm test` / `npm run eval`, which couldn't be done where this was built.
+See the plan in `research/recognition-analysis.md`. Real-model results (2026-09-24): `npm test` passes in full.
+Held-out 100% top-1. Challenge 86% top-1 / 94% top-2, with `clear` right 31/32. All 6 multi-line calls are
+right by line 3. Details are in "Real-model results" in the analysis doc.
 
 ### R2. Separate style from state (medium, about 2–3 days; biggest conceptual gain)
 The six types currently mix two ideas the research treats separately. **Style** is the stable Process
@@ -349,8 +350,8 @@ end to end in real Chrome, because the automated browser can't click the permiss
 
 1. Finish the manual side-panel check (§2); the automated extension test is done.
 2. Settings PIN (§5, option A), if the pilot client wants it.
-3. Run `npm run setup-model && npm test && npm run eval` once on a machine with the model: the recognition
-   work from 2026-09-24 hasn't been measured with the real model yet (see `research/recognition-analysis.md`).
+3. Done 2026-09-24: real-model `npm test` and `npm run eval` (results in `research/recognition-analysis.md`).
+   Re-run `npm run eval` after cue changes to check for regressions.
 4. Try chat capture by hand once in real Chrome (Settings → Chat capture → Turn on → accept the prompt).
    R1–R3, the optional Gemini Nano read and R5 chat capture are built.
 5. Collect and anonymize real example lines (§4 protocol, `npm run prepare-examples`) during pilot setup,

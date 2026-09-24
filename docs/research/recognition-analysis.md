@@ -175,7 +175,7 @@ Steps 1–5 were implemented on 2026-09-24. The status of each is at the end of 
    *Done:* class centroid, computed at runtime from the index (no extra artifact), with softmax
    probabilities (temperature 0.04, fitted by leave-one-out). "Clear" means p ≥ 0.7: in leave-one-out,
    every suggestion at or above that was right (60/60). Leave-one-out top-1: 74% → 86% (embedding
-   only). The real-model gates still need a run with the model.
+   only). Real-model gates passed on 2026-09-24 (see "Real-model results").
 3. **Keyword-cue layer + "why" highlights** (roadmap R3). Gate: challenge accuracy up, with no held-out regression.
    *Done:* `src/data/cues.json` (38 families across the six types). Absolutes are read by direction.
    Matches right after a negation are ignored. Agreement inside a question ("if I go ahead") doesn't count.
@@ -216,11 +216,33 @@ Steps 1–5 were implemented on 2026-09-24. The status of each is at the end of 
 10. **Chat auto-capture** (R5). *Done, off by default:* Settings → Chat capture; one site, runtime permission,
    history skipped, the agent confirms. Phone speech-to-text is not built (legal gate).
 
-## Not verified yet
+## Real-model results (2026-09-24)
 
-Hugging Face is blocked in the environment where this was written, so the model couldn't be run:
-held-out, challenge and multi-line call accuracy with the model are **not** measured here, and neither
-are the two real-model tests in `tests/semantic.test.ts` (held-out ≥ 80% top-1, every demo line
-`clear`). Run `npm run setup-model`, then `npm test` and `npm run eval`. If a demo line comes out
-`close`, the first knobs are `TEMPERATURE` and `CLEAR_PROB` in `src/lib/similarity.ts`. Gemini Nano was
-tested only against a fake `LanguageModel` (unit tests and a browser run), not the real model.
+Run on a machine with the model (`npm test`, `npm run eval`), with the runtime pipeline (centroid + cues).
+`npm test` passes in full, including both real-model checks: held-out top-1 at least 80% and every demo
+line `clear`.
+
+| Set | Top-1 | Top-2 | Notes |
+|---|---|---|---|
+| Held-out (18) | 100% | 100% | `clear` right 17/17, `close` right 1/1 |
+| Challenge (36) | 86% | 94% | `clear` right 31/32; all 4 `close` lines were wrong at top-1, and 3 of them had the right type second |
+| Calls (6, model + keywords) | 4/6 after line 1 | — | 5/6 after line 2, 6/6 after line 3 |
+
+- **Confidence is well calibrated:** agents can trust `clear` (48/49 right across both sets). `close` means
+  check the second option, which the panel shows.
+- **The one confident miss:** "I'm not upset, I just want to understand how you got to that number" came out as
+  Distressed. The model reacts to "upset" despite the negation. Fixed afterwards with a "calm fact-finding"
+  cue for Analytical.
+- **The `close` misses** involve a question about kids' coverage (Distressed read as Analytical), "hate it" in
+  a hesitant line, a family mention in a hesitant line, and "still blinking" in a cooperative line. They're
+  left as they are: the panel offers the right alternative second, and tuning the cues to these specific
+  lines would spoil the challenge set as a test.
+- **Calls:** in the Distressed call, "cut off Friday and I just lost my job" read as Demanding until line 3.
+  Fixed afterwards: job and income loss now count as high stakes.
+- **Caveat:** the previous matcher was never scored on the challenge set with the real model, so there's no
+  before-and-after for it. The challenge set is ours, and the two follow-up cues were written after seeing
+  its results, so re-run `npm run eval` to confirm there's no regression, and treat it as a stress test.
+  Real client lines (NEXT-STEPS §4) remain the real measure.
+
+**Still unverified:** chat capture in real Chrome (the permission prompt), real Gemini Nano, importing client
+example lines with the real model, and the model benchmark and SetFit fine-tuning (both need real data).
