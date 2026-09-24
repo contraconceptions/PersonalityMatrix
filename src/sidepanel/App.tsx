@@ -94,9 +94,14 @@ export default function App() {
       ) : null}
 
       <header className="app-header">
-        <div>
-          <span className="eyebrow">You are</span>
-          <strong>{agent.name}</strong>
+        <div className="who">
+          <span className="avatar" aria-hidden="true">
+            {agent.name.replace(/^The /, "").charAt(0)}
+          </span>
+          <div>
+            <span className="eyebrow">You are</span>
+            <strong>{agent.name}</strong>
+          </div>
         </div>
         {!demo && (
           <nav className="header-links">
@@ -128,8 +133,9 @@ export default function App() {
           }
         />
       ) : (
-        <p className="hint">
-          Pick the customer type you're hearing, or press <kbd>1</kbd>–<kbd>6</kbd>.
+        <p className="hint empty">
+          Pick the customer type you're hearing, or press <kbd>1</kbd>–<kbd>6</kbd>. Guidance for your pairing
+          appears here.
         </p>
       )}
     </main>

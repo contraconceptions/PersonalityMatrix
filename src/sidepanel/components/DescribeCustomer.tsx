@@ -116,7 +116,7 @@ export default function DescribeCustomer({ onSuggest, onAccept, presetText }: Pr
           }
         }}
       />
-      <p id="describe-status" className="describe-status">
+      <p id="describe-status" className={`describe-status is-${status}`}>
         {status === "error" ? (
           "Suggestions unavailable. Pick the customer type below."
         ) : top ? (
@@ -133,7 +133,9 @@ export default function DescribeCustomer({ onSuggest, onAccept, presetText }: Pr
                 </button>
               </>
             )}
-            <span className="muted"> · Enter to use</span>
+            <span className="muted enter-hint">
+              <kbd>Enter</kbd> to use
+            </span>
           </>
         ) : text.trim().length >= MIN_CHARS && status === "loading" ? (
           "Preparing on-device model…"
