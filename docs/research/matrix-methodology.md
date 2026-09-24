@@ -3,6 +3,8 @@
 The Gemini report defines 6 agent × 6 customer archetypes (36 pairings) but only works through
 6 of them as examples. The other 30 were **derived** on 2026-09-23 using the same frameworks.
 Each node in `src/data/interactionMatrix.json` carries `"basis": "research"` or `"basis": "derived"`.
+Once team leads have reviewed or rewritten a node, mark it `"basis": "custom"` (a content import
+also treats a missing or unknown `basis` as `custom`).
 
 ## Method
 

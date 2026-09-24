@@ -28,7 +28,9 @@ npm run package       # build + zip → release/personality-matrix-<version from
 ```
 
 The real-model accuracy tests in `tests/semantic.test.ts` are skipped automatically if `public/models/`
-hasn't been populated, so run `npm run setup-model` first to get the full suite.
+hasn't been populated, so run `npm run setup-model` first to get the full suite. `npm install` runs an
+`onnxruntime-node` postinstall that downloads a native binary. If the network blocks it, use
+`npm install --ignore-scripts`. Typecheck and the other tests still work, but `npm run embed` doesn't.
 
 ## Architecture
 

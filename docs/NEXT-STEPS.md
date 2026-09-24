@@ -17,7 +17,7 @@ this is the working detail behind the unchecked boxes.
 | Phase 2: offline suggestions | Done; accuracy is based on **synthetic** example lines (see §4) |
 | Phase 3: demo, brand voice, import/export, usage log | Done; Settings is **not locked** (see §5) |
 | Phase 4: voice emotion | Not started, needs legal review first (see §6) |
-| Tests | 48 passing (`npm test`), including real-model accuracy checks |
+| Tests | 48 passing (`npm test`), including 2 real-model accuracy checks that skip when `public/models/` is empty |
 | Real-extension test (§2) | Done 2026-09-23: 21/21 automated checks pass as an unpacked extension; manual side-panel check pending |
 | Client build | `npm run package` → `release/personality-matrix-0.1.0.zip` (~23 MB zipped, ~50 MB unpacked) |
 
@@ -26,7 +26,7 @@ this is the working detail behind the unchecked boxes.
 ```sh
 npm install
 npm run setup-model   # downloads the 23 MB model into public/models/ (git-ignored; build also runs it)
-npm test
+npm test              # or: npx vitest run tests/<file>.test.ts / npx vitest run -t "<test name>"
 npm run dev           # UI in a normal tab at /sidepanel.html (uses localStorage instead of chrome.storage)
 npm run package       # build + zip for clients
 ```
@@ -45,6 +45,12 @@ npm run package       # build + zip for clients
   misleading. The demo typing effect is time-based for this reason.
 - **Clipboard tests overwrite the developer's real clipboard.** Save and restore it.
 - `npm run embed` must be re-run after editing `src/data/customerExamples.json`. A test fails if you forget.
+- **`npm install` downloads the `onnxruntime-node` native binary in a postinstall script.** On a restricted
+  network it fails with `ECONNRESET`. `npm install --ignore-scripts` still runs the typecheck and all tests
+  except the 2 real-model ones, but `npm run embed` needs the binary.
+- **Content imports coerce `basis`:** anything other than `research` or `derived` becomes `custom`
+  (`validateContent()` in `src/lib/content.ts`). Overrides live in `chrome.storage.local`, so they apply
+  only on the machine where they were imported.
 - **Branded Chrome (137+) ignores `--load-extension`.** For automated extension tests use Playwright's
   Chromium (`channel: "chromium"`, headless works) with `--load-extension`, and open
   `chrome-extension://<id>/sidepanel.html` in a tab. Playwright can't click the toolbar icon.

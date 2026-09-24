@@ -13,10 +13,11 @@ and detailed plans for every open item.
 |---|---|---|
 | Platform | Chrome MV3 extension, **Side Panel** UI | Sits beside the CRM without covering it; persists across tabs |
 | Stack | Vite + React 18 + TypeScript | Research suggests React components; typed data catches matrix gaps |
-| Data | Static JSON bundled in the extension | Offline, zero latency, MV3 forbids remote code |
+| Data | Static JSON bundled in the extension; supervisors can override it by importing a JSON file (Settings) | Offline, zero latency, MV3 forbids remote code; tailor a client without a rebuild |
+| Suggestions | Transformers.js + quantized all-MiniLM-L6-v2 in a Web Worker, model bundled | Fully offline; agent's text never leaves the device |
 | State | `chrome.storage.local` (falls back to `localStorage` in `npm run dev`) | Survives service-worker shutdown |
-| Tests | Vitest | Validates matrix integrity + lookup logic |
-| Privacy | No network calls, no customer PII stored | Only agentId + UI prefs are persisted |
+| Tests | Vitest | Data integrity, guidance logic, import validation, suggestion accuracy on held-out lines |
+| Privacy | No network calls, no customer text stored | Persisted on the device: agentId, content overrides, usage log (type ids and copied phrases only) |
 
 ## Guidance model
 
@@ -27,27 +28,32 @@ even before all nodes are hand-written:
 2. **Matrix node override** (`interactionMatrix.json`) — agent-specific risk, strategy, and phrases.
 3. **Global trigger list** (`phrases.json`) — always-avoid phrases with a replacement for each.
 
-`resolveGuidance()` merges these (node > baseline > global) and de-duplicates phrases. All 36 nodes
-are authored now; the fallback only matters if a node is removed.
+`resolveGuidance()` merges these (node > baseline > global), de-duplicates phrases, then applies the
+**brand voice** (term swaps, plus the company's "never say" phrases). All 36 nodes are authored now;
+the fallback only matters if a node is removed.
+
+Supervisor imports (`src/lib/content.ts`) are merged onto the built-in data first: customer
+profiles and matrix nodes merge by key, while triggers and brand voice replace the defaults.
 
 ## Phases
 
-### Phase 0 — Scaffold ✅ (this commit)
+### Phase 0 — Scaffold ✅
 - Project structure, manifest, build, side panel shell, service worker
-- Data files: 6 agents, 6 customers, 6 authored matrix nodes, global triggers
+- Data files: 6 agents, 6 customers, 6 authored matrix nodes (the research examples), global triggers
 - Components: `AgentSetup`, `CustomerQuickId`, `MatrixOutput`
 - Tests for data integrity and guidance resolution
 
-### Phase 1 — MVP content & UX
+### Phase 1 — MVP content & UX ✅ (except the pilot)
 - [x] Author all 36 matrix nodes (30 derived — review with client SMEs)
 - [x] Agent self-assessment quiz: 10 scenario questions, normalized scoring, result + runner-up (`src/data/quiz.json`)
 - [x] Customer quick-ID aids: short cue on each button, full identifiers on hover
 - [x] Keyboard shortcuts: 1–6 pick customer, Esc clears (in-panel; global `chrome.commands` hotkeys are a possible later add)
 - [x] Click-to-copy on each Relate phrase
 - [x] Ego-state line: You <state> → Them <state>, crossed vs in sync
-- [ ] Load unpacked in Chrome and pilot with a few agents (`npm run package` → `release/*.zip`)
+- [x] Load unpacked as a real extension: automated Playwright run passes (2026-09-23); a short manual side-panel check remains (`NEXT-STEPS.md` §2)
+- [ ] Pilot with a few agents (`npm run package` → `release/*.zip`), on hold: see `NEXT-STEPS.md` §3
 
-### Phase 2 — Local semantic search
+### Phase 2 — Local semantic search ✅ (on synthetic example lines)
 - [x] Free-text box: agent types/pastes what the customer said → suggested archetype (Enter to accept), matching button outlined
 - [x] Transformers.js v4 + quantized `all-MiniLM-L6-v2` (23 MB), bundled; worker blocks any non-local fetch
 - [x] `npm run embed` pre-computes 72 example-utterance embeddings → `src/data/exampleEmbeddings.json` (238 KB)
@@ -55,14 +61,14 @@ are authored now; the fallback only matters if a node is removed.
 - [ ] Grow `customerExamples.json` with real (anonymized) client call lines, then `npm run embed`
 - [ ] Recognition roadmap R1–R5 (measurement, style vs state, trained classifier + "why", better model, auto-capture): see `NEXT-STEPS.md` §8
 
-### Phase 3 — Admin & analytics (local)
+### Phase 3 — Admin & analytics (local) ✅
 - [x] Demo mode: 5 scripted calls (`src/data/demoScenarios.json`) played through the real suggestion model, with a coaching note per call; → / ← / Esc; never saves the agent or logs usage. Start from onboarding ("Watch a demo") or Settings
 - [x] Import/export guidance JSON (Settings): validated with readable errors; sections in a file replace the current ones; reset to built-in
 - [x] Local-only usage log: customer-type picks (click / key / suggestion) and copied phrases, never customer text; summary + CSV export (formula-injection safe); capped at 5,000 events
 - [x] Brand voice: whole-word, case-aware term swaps (e.g. customer → patient) applied to all guidance and copied phrases, plus company "never say" phrases
-- [ ] Optional: PIN-lock Settings if agents shouldn't edit content (currently open to everyone on the device)
+- [ ] Optional: PIN-lock Settings if agents shouldn't edit content (currently open to everyone on the device): see `NEXT-STEPS.md` §5
 
-### Phase 4 — Exploratory
+### Phase 4 — Exploratory (not started; see `NEXT-STEPS.md` §6)
 - [ ] WASM speech-emotion recognition (arousal/valence) to *suggest* the customer archetype
 - [ ] Needs mic/tab-audio consent, legal review (call recording laws) — gate behind policy
 
