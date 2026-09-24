@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { nextDemo, prevDemo, scenarios, type DemoState } from "../lib/demo";
 import { getAgent, resolveGuidance } from "../lib/matrix";
+import { CALM, type Mood, type MoodTrend } from "../lib/mood";
 import { shortcutFor } from "../lib/shortcuts";
 import { loadAgentId, saveAgentId } from "../lib/storage";
 import type { AgentId, CustomerId } from "../lib/types";
@@ -21,6 +22,7 @@ export default function App() {
   const [suggestedId, setSuggestedId] = useState<CustomerId | null>(null);
   const [view, setView] = useState<"main" | "settings">("main");
   const [demo, setDemo] = useState<DemoState | null>(null);
+  const [mood, setMood] = useState<{ mood: Mood; trend: MoodTrend | null }>({ mood: CALM, trend: null });
 
   const scenario = demo ? scenarios[demo.index] : null;
   // In a demo the scenario's agent is used for display only; the saved agent is untouched.
@@ -120,6 +122,7 @@ export default function App() {
         presetText={scenario?.customerLine}
         allowAi={!demo}
         onNewCall={() => setCustomerId(null)}
+        onMood={(m, trend) => setMood({ mood: m, trend })}
         onSuggest={setSuggestedId}
         onAccept={(id) => (demo ? setDemo({ index: demo.index, beat: "guide" }) : selectCustomer(id, "suggestion"))}
       />
@@ -129,6 +132,7 @@ export default function App() {
       {guidance ? (
         <MatrixOutput
           guidance={guidance}
+          mood={mood.mood.id === "calm" ? null : { state: content.moods.find((m) => m.id === mood.mood.id)!, trend: mood.trend }}
           onReset={() => setCustomerId(null)}
           onCopy={(phrase) =>
             !demo && customerId && void logEvent({ type: "copy", agentId: activeAgentId, customerId, phrase })

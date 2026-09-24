@@ -5,6 +5,8 @@
 //    lines in view, so the "+ cues" row is optimistic; the embedding-only rows are the fair comparison.
 // 2. If the model is present (`npm run setup-model`): top-1 / top-2 accuracy and a confusion table for the
 //    held-out and challenge fixtures, using the same classify() the side panel uses.
+// 3. Client data: `npm run eval -- --examples client-data/client-examples.json --heldout client-data/client-heldout.json`
+//    scores the client's held-out lines with and without their example lines (needs the model).
 // Loads the app's own TypeScript (src/lib/similarity.ts) through Vite, so it scores exactly what ships.
 import { existsSync, readFileSync } from "node:fs";
 import { runnerImport } from "vite";
@@ -13,6 +15,13 @@ const { module: similarity } = await runnerImport("./src/lib/similarity.ts");
 const { classify, dot, EMBED_OPTIONS, MODEL_ID } = similarity;
 
 const cues = JSON.parse(readFileSync("src/data/cues.json", "utf8"));
+
+const arg = (name) => {
+  const i = process.argv.indexOf(name);
+  return i > 0 ? process.argv[i + 1] : undefined;
+};
+const examplesFile = arg("--examples");
+const heldOutFile = arg("--heldout");
 
 const read = (f) => JSON.parse(readFileSync(f, "utf8"));
 const index = read("src/data/exampleEmbeddings.json");
@@ -97,6 +106,7 @@ scoreCalls("keywords only", () => null);
 
 if (!existsSync(`public/models/${MODEL_ID}/onnx/model_quantized.onnx`)) {
   console.log("\nModel not found: run `npm run setup-model` to also score the held-out and challenge fixtures.");
+  if (examplesFile || heldOutFile) console.log("(--examples and --heldout need the model too.)");
   process.exit(0);
 }
 
@@ -105,16 +115,14 @@ env.allowRemoteModels = false;
 env.localModelPath = "public/models/";
 const extractor = await pipeline("feature-extraction", MODEL_ID, { dtype: "q8" });
 
-for (const file of ["tests/fixtures/heldOutUtterances.json", "tests/fixtures/challengeUtterances.json"]) {
-  const set = read(file);
-  const vecs = (await extractor(set.map((x) => x.text), { ...EMBED_OPTIONS })).tolist();
+function scoreSet(file, set, vecs, idx, label) {
   const confusion = Object.fromEntries(TYPES.map((t) => [t, Object.fromEntries(TYPES.map((u) => [u, 0]))]));
   let top1 = 0;
   let top2 = 0;
   const conf = { clear: [0, 0], close: [0, 0], none: [0, 0] };
   const misses = [];
   set.forEach((x, i) => {
-    const r = classify(vecs[i], index, { text: x.text, cues });
+    const r = classify(vecs[i], idx, { text: x.text, cues });
     const got = r.ranked[0].customerId;
     confusion[x.expected][got]++;
     conf[r.confidence][1]++;
@@ -124,7 +132,7 @@ for (const file of ["tests/fixtures/heldOutUtterances.json", "tests/fixtures/cha
     } else misses.push(`  ${x.expected} → ${got} (${r.confidence})${x.trap ? ` [${x.trap}]` : ""}: ${x.text}`);
     if (r.ranked.slice(0, 2).some((s) => s.customerId === x.expected)) top2++;
   });
-  console.log(`\n${file}: top-1 ${pct(top1, set.length)}  top-2 ${pct(top2, set.length)}  (n=${set.length})`);
+  console.log(`\n${file}${label}: top-1 ${pct(top1, set.length)}  top-2 ${pct(top2, set.length)}  (n=${set.length})`);
   console.log(
     "  right when confidence is " +
       Object.entries(conf)
@@ -136,6 +144,30 @@ for (const file of ["tests/fixtures/heldOutUtterances.json", "tests/fixtures/cha
   console.log("  " + "".padEnd(12) + TYPES.map((t) => t.slice(0, 5).padStart(6)).join(""));
   for (const t of TYPES) console.log("  " + t.padEnd(12) + TYPES.map((u) => String(confusion[t][u] || ".").padStart(6)).join(""));
   if (misses.length) console.log(misses.join("\n"));
+}
+
+// Client data (from `npm run prepare-examples`): --examples adds their lines to the index, --heldout scores their test set.
+let clientIndex = null;
+if (examplesFile) {
+  const { module: clientExamples } = await runnerImport("./src/lib/clientExamples.ts");
+  const file = read(examplesFile);
+  const errors = [];
+  const ex = clientExamples.validateExamples(file.customerExamples, file.customerExamplesMode, TYPES, errors);
+  if (!ex) {
+    console.error(`${examplesFile}: ${errors.join("; ")}`);
+    process.exit(1);
+  }
+  const embedOne = async (t) => (await extractor(t, { ...EMBED_OPTIONS })).tolist()[0];
+  clientIndex = clientExamples.mergeIndex(index, await clientExamples.buildClientIndex(ex, embedOne));
+  console.log(`\nWith ${examplesFile}: ${clientIndex.items.length} example lines (built-in ${index.items.length}).`);
+}
+
+const files = ["tests/fixtures/heldOutUtterances.json", "tests/fixtures/challengeUtterances.json", ...(heldOutFile ? [heldOutFile] : [])];
+for (const file of files) {
+  const set = read(file);
+  const vecs = (await extractor(set.map((x) => x.text), { ...EMBED_OPTIONS })).tolist();
+  scoreSet(file, set, vecs, index, clientIndex ? " (built-in examples)" : "");
+  if (clientIndex) scoreSet(file, set, vecs, clientIndex, " (with client examples)");
 }
 
 const callVecs = [];

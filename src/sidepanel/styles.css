@@ -153,6 +153,12 @@ kbd {
   margin: -2px 0 0; font-size: 11.5px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
 }
 .describe-meta .link { font-size: 11.5px; }
+.mood-chip { font-weight: 650; border-radius: 999px; padding: 0 8px; white-space: nowrap; }
+.mood-chip .trend { font-weight: 600; }
+.mood-calm { background: var(--relate-soft); color: var(--relate); }
+.mood-anxious { background: var(--accent-soft); color: var(--accent-strong); }
+.mood-frustrated { background: var(--risk-soft); color: var(--risk); }
+.mood-escalating { background: var(--avoid-soft); color: var(--avoid); }
 .why { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .why mark {
   background: var(--accent-soft); color: var(--accent-strong); border-radius: 4px; padding: 0 5px; font-weight: 600;
@@ -206,6 +212,18 @@ kbd {
 .relate h3 { color: var(--relate); }
 .avoid { background: var(--avoid-soft); border-color: var(--avoid-line); border-left-color: var(--avoid); }
 .avoid h3 { color: var(--avoid); }
+
+/* "Right now": what to do about the customer's current mood; comes first while it lasts. */
+.now h3 { flex-wrap: wrap; }
+.now .trend { font-weight: 600; text-transform: none; letter-spacing: 0; }
+.now-anxious { background: var(--accent-soft); border-color: #cfdeef; border-left-color: var(--accent); }
+.now-anxious h3 { color: var(--accent-strong); }
+.now-frustrated { background: var(--risk-soft); border-color: var(--risk-line); border-left-color: var(--risk); }
+.now-frustrated h3 { color: var(--risk); }
+.now-escalating { background: var(--avoid-soft); border-color: var(--avoid-line); border-left-color: var(--avoid); }
+.now-escalating h3 { color: var(--avoid); }
+.now .phrase { border-color: var(--border-strong); }
+.now .copy-state { color: var(--text); }
 
 /* Copyable phrases: each one reads as a button, not just on hover. */
 .phrases { list-style: none; padding: 0; display: grid; gap: 6px; margin-top: 10px; }

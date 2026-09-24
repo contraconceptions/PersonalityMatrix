@@ -13,7 +13,8 @@
     "package": "npm run build && node scripts/package.mjs",
     "setup-model": "node scripts/fetch-model.mjs",
     "embed": "node scripts/embed.mjs",
-    "eval": "node scripts/eval.mjs"
+    "eval": "node scripts/eval.mjs",
+    "prepare-examples": "node scripts/prepare-examples.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.0",

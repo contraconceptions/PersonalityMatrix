@@ -126,24 +126,31 @@ are clear-cut, so the 18/18 held-out score overstates real-world accuracy.
 1. Pull 20–40 opening customer lines per customer type from call notes, chat logs or QA transcripts.
 2. **Anonymize before the data leaves the client:** names, account/order numbers, addresses, dates of
    birth, medical details. Replace them with placeholders like `[name]` and `[number]`.
-3. Two people label each line independently with one of the six types. Keep only lines they agree on
-   (track the agreement rate; below ~70% means the type definitions need clarifying for that client).
-4. Split: about 80% into `customerExamples.json`, about 20% into `tests/fixtures/heldOutUtterances.json`.
-5. `npm run embed`, then `npm test`. The accuracy test now measures the client's real lines.
+3. Two people label each line independently with one of the six types, in a CSV with `text`,
+   `label_a`, `label_b` columns (template: `docs/examples/labeling-template.csv`).
+4. `npm run prepare-examples -- labeled.csv client-data`. The tool:
+   - reports agreement (percent and Cohen's kappa; below ~0.6 means the type definitions need clarifying
+     for this client) and which types were confused;
+   - keeps only the lines both people agreed on;
+   - drops lines with obvious personal data and flags possible names, addresses and dates to check by hand;
+   - splits about 80/20 into `client-data/client-examples.json` and `client-data/client-heldout.json`.
+   `client-data/` is git-ignored: **never commit client lines**.
+5. Measure before and after: `npm run eval -- --examples client-data/client-examples.json --heldout client-data/client-heldout.json`.
+6. Deploy without a rebuild: Settings → Guidance content → Import `client-examples.json` on each agent
+   machine (or ship it in the client's content file). The lines are learned on the device.
 
 ### Targets
 - Top-1 ≥ 75%, top-2 ≥ 90% on real held-out lines. If lower, add examples for the most-confused types first
   (the test prints the misses).
 
-### Feature: per-client example sets without a rebuild (design)
-- Add an optional `customerExamples` section to the content import file
-  (`{ "analytical": ["..."], ... }`).
-- On import, embed the lines **in the browser** with the already-loaded worker, then store the
-  vectors in `chrome.storage.local` (about 3 KB per line; 500 lines ≈ 1.5 MB, fine with the
-  `unlimitedStorage` permission if needed).
-- `DescribeCustomer` uses the imported index when present, otherwise the built-in one.
-- Tests: validation of the section; merge behavior; an embedding-dimension check.
-- Estimate: 1 day.
+### Feature: per-client example sets without a rebuild — done (2026-09-24)
+- Content import section `customerExamples` (`{ "analytical": ["..."], ... }`) with optional
+  `customerExamplesMode`: `"add"` (default, on top of the built-in lines) or `"replace"` (then every type
+  needs at least 3 lines). Up to 1,500 lines. Lines with email addresses or long numbers are rejected.
+- On import, Settings embeds every line with the panel's model and stores the vectors in
+  `chrome.storage.local` (`clientIndex`). If the model isn't available, nothing from the file is saved.
+  `ContentContext` merges them into the index (`src/lib/clientExamples.ts`), matched by a hash of the lines.
+- Tested with a stand-in embedder (unit tests). **Not yet tried with the real model** (not available where it was built).
 
 ---
 
@@ -248,11 +255,16 @@ Nothing below can be shown to be an improvement without a yardstick.
   table to Settings → Usage and the CSV export. A pilot then shows exactly where recognition is weak.
 - Tests: logging shape (no text fields), summary math, CSV columns.
 
-**Status (2026-09-24):** the decision rule (centroid + calibrated softmax), keyword cues with "why"
-words, per-call accumulation and the optional Gemini Nano read are built. See the plan in
-`research/recognition-analysis.md`. Still open from R2: the per-line state signal (escalation
-meter). Still open overall: R4 and R5, and a real-model run of `npm test` / `npm run eval`, which
-couldn't be done where this was built.
+**Status (2026-09-24):** built:
+- the decision rule (centroid + calibrated softmax);
+- keyword cues with "why" words;
+- per-call accumulation (style);
+- the per-line mood signal (state: anxious / frustrated / escalating, with a trend and "Right now" guidance);
+- per-client example import plus `npm run prepare-examples`;
+- the optional Gemini Nano read.
+
+See the plan in `research/recognition-analysis.md`. Still open: R1 correction logging, R4 and R5, and a
+real-model run of `npm test` / `npm run eval`, which couldn't be done where this was built.
 
 ### R2. Separate style from state (medium, about 2–3 days; biggest conceptual gain)
 The six types currently mix two ideas the research treats separately. **Style** is the stable Process
@@ -314,9 +326,12 @@ Transactional Analysis emotional state, which shifts line by line.
 
 1. Finish the manual side-panel check (§2); the automated extension test is done.
 2. Settings PIN (§5, option A), if the pilot client wants it.
-3. Recognition R1 (measurement + correction logging), so the pilot produces accuracy data.
-4. Recognition R2 + R3 (style vs state, trained classifier, "why" highlights), optional before the pilot.
-5. Collect and anonymize real example lines (§4 protocol) during pilot setup.
+3. Run `npm run setup-model && npm test && npm run eval` once on a machine with the model: the recognition
+   work from 2026-09-24 hasn't been measured with the real model yet (see `research/recognition-analysis.md`).
+4. Recognition R1 correction logging, so the pilot produces accuracy data. (R2, R3 and the optional Gemini
+   Nano read are built.)
+5. Collect and anonymize real example lines (§4 protocol, `npm run prepare-examples`) during pilot setup,
+   then import them.
 6. Pilot (§3).
 7. Recognition R4 on real data; SME review of the most-used derived pairings (from pilot data).
 8. R5 per client; Phase 4 only after legal sign-off.

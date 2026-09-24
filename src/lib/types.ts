@@ -87,6 +87,19 @@ export interface CueFamily {
   patterns: string[];
 }
 
+export type MoodId = "anxious" | "frustrated" | "escalating";
+
+/** A momentary emotional state (TA-style), detected per line, with what to do about it right now. */
+export interface MoodState {
+  id: MoodId;
+  name: string;
+  /** One-line coaching tip for this state. */
+  tip: string;
+  /** De-escalation phrases shown (and copyable) while the customer is in this state. */
+  phrasesToUse: string[];
+  cues: Array<Omit<CueFamily, "customerId">>;
+}
+
 /** Everything the guidance is built from. Agent archetypes are fixed; the rest is editable. */
 export interface Content {
   customerProfiles: CustomerProfile[];
@@ -95,6 +108,10 @@ export interface Content {
   brandVoice: BrandVoice;
   /** Recognition cues for the "what the customer said" box. */
   cues: CueFamily[];
+  /** Mood states (anxious / frustrated / escalating) and their cues. */
+  moods: MoodState[];
+  /** Imported client example lines (text; their vectors are stored separately, see clientExamples.ts). */
+  customerExamples?: { mode: "add" | "replace"; lines: Partial<Record<CustomerId, string[]>> };
 }
 
 export interface Guidance {

@@ -199,6 +199,15 @@ Steps 1–5 were implemented on 2026-09-24. The status of each is at the end of 
    "AI" and shows "AI heard …". It's never used in demos. Not yet measured against real Chrome AI:
    that needs a supported device.
 6. **Real data** (NEXT-STEPS §4) → SetFit fine-tune (roadmap R4). Expected to be the largest single gain.
+   *Tooling done:* `npm run prepare-examples` (agreement, personal-data checks, split) and a
+   `customerExamples` import section, learned on the device with no rebuild. `npm run eval -- --examples … --heldout …`
+   compares before and after. Waiting on client data.
+7. **Per-line mood** (roadmap R2 "state"). *Done:* `src/lib/mood.ts` + `src/data/moods.json`. Each line reads
+   as calm, anxious, frustrated or escalating (escalation outranks frustration; ALL-CAPS counts as shouting),
+   with a trend against the previous accepted line ("▲ heating up", "▼ calming down"). While the mood
+   isn't calm, the guidance opens with a "Right now" block: a tip and copyable de-escalation phrases,
+   importable per client. Style keeps building across the call while mood follows the latest line. On the
+   fixture lines, every Expressive and Cooperative line reads calm, and 13 of 21 Distressed lines read anxious.
 
 ## Not verified yet
 

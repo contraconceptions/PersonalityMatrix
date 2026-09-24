@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { copyText } from "../../lib/clipboard";
-import type { Fit, Guidance } from "../../lib/types";
+import { applyTerms } from "../../lib/brandVoice";
+import type { MoodTrend } from "../../lib/mood";
+import type { Fit, Guidance, MoodState } from "../../lib/types";
+import { useContent } from "../ContentContext";
 import Icon from "./Icon";
 
 interface Props {
   guidance: Guidance;
   onReset: () => void;
   onCopy?: (phrase: string) => void;
+  /** The customer's current mood, when it isn't calm: shown first as "Right now". */
+  mood?: { state: MoodState | undefined; trend: MoodTrend | null } | null;
 }
 
 const FIT_LABEL: Record<Fit, string> = {
@@ -15,7 +20,9 @@ const FIT_LABEL: Record<Fit, string> = {
   watch: "Watch closely",
 };
 
-export default function MatrixOutput({ guidance: g, onReset, onCopy }: Props) {
+export default function MatrixOutput({ guidance: g, onReset, onCopy, mood }: Props) {
+  const { content } = useContent();
+  const voice = (s: string) => applyTerms(s, content.brandVoice.terms);
   const [copied, setCopied] = useState<string | null>(null);
   const ref = useRef<HTMLElement>(null);
 
@@ -60,6 +67,30 @@ export default function MatrixOutput({ guidance: g, onReset, onCopy }: Props) {
           )}
         </p>
       </div>
+
+      {mood?.state && (
+        <div className={`block now now-${mood.state.id}`}>
+          <h3>
+            Right now: {mood.state.name}
+            {mood.trend === "rising" && <span className="trend">▲ heating up</span>}
+            {mood.trend === "easing" && <span className="trend">▼ calming down</span>}
+          </h3>
+          <p>{voice(mood.state.tip)}</p>
+          <ul className="phrases">
+            {mood.state.phrasesToUse.map(voice).map((p) => (
+              <li key={p}>
+                <button className={`phrase${copied === p ? " copied" : ""}`} onClick={() => copy(p)} title="Click to copy">
+                  <span>“{p}”</span>
+                  <span className="copy-state" aria-live="polite">
+                    <Icon name={copied === p ? "check" : "copy"} size={14} />
+                    {copied === p ? "Copied" : "Copy"}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="block risk">
         <h3>

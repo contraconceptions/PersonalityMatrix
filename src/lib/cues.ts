@@ -22,10 +22,18 @@ export function normalize(text: string): string {
   return text.toLowerCase().replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim();
 }
 
-type Compiled = { family: CueFamily; res: RegExp[] };
-const cache = new WeakMap<CueFamily[], Compiled[]>();
+/** What any cue family needs for matching (customer-type cues and mood cues share this). */
+export interface Matchable {
+  why: string;
+  weight: number;
+  negatable?: boolean;
+  patterns: string[];
+}
 
-function compile(families: CueFamily[]): Compiled[] {
+type Compiled<F> = { family: F; res: RegExp[] };
+const cache = new WeakMap<object, Compiled<Matchable>[]>();
+
+function compile<F extends Matchable>(families: F[]): Compiled<F>[] {
   let c = cache.get(families);
   if (!c) {
     c = families.map((family) => ({
@@ -40,7 +48,7 @@ function compile(families: CueFamily[]): Compiled[] {
     }));
     cache.set(families, c);
   }
-  return c;
+  return c as Compiled<F>[];
 }
 
 /** Throws a readable error if a pattern isn't a valid regular expression. */
@@ -53,13 +61,12 @@ export function checkPattern(p: string): string | null {
   }
 }
 
-/** Find the cue families present in a line. Each family counts once. */
-export function detectCues(text: string, families: CueFamily[]): CueResult {
+/** The families present in a line, each with the words that matched. Each family counts once. */
+export function matchFamilies<F extends Matchable>(text: string, families: F[]): Array<{ family: F; match: string }> {
   const s = normalize(text);
-  const scores: CueResult["scores"] = {};
-  const hits: CueHit[] = [];
+  const found: Array<{ family: F; match: string }> = [];
   for (const { family, res } of compile(families)) {
-    let found: string | null = null;
+    let match: string | null = null;
     for (const re of res) {
       re.lastIndex = 0;
       for (let m = re.exec(s); m; m = re.exec(s)) {
@@ -69,14 +76,23 @@ export function detectCues(text: string, families: CueFamily[]): CueResult {
         }
         const before = s.slice(Math.max(0, m.index - NEGATION_WINDOW), m.index);
         if (family.negatable && NEGATION.test(before)) continue;
-        found = m[0].trim();
+        match = m[0].trim();
         break;
       }
-      if (found) break;
+      if (match) break;
     }
-    if (!found) continue;
+    if (match) found.push({ family, match });
+  }
+  return found;
+}
+
+/** Find the customer-type cue families present in a line. */
+export function detectCues(text: string, families: CueFamily[]): CueResult {
+  const scores: CueResult["scores"] = {};
+  const hits: CueHit[] = [];
+  for (const { family, match } of matchFamilies(text, families)) {
     scores[family.customerId] = (scores[family.customerId] ?? 0) + family.weight;
-    hits.push({ customerId: family.customerId, why: family.why, weight: family.weight, match: found });
+    hits.push({ customerId: family.customerId, why: family.why, weight: family.weight, match });
   }
   hits.sort((a, b) => b.weight - a.weight);
   return { scores, hits };

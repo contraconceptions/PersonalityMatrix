@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import indexData from "../../data/exampleEmbeddings.json";
 import { combine, commitChoice, current, emptyCall, type CallMemory } from "../../lib/callMemory";
 import { embed, onStatus, warmUp, type ModelStatus } from "../../lib/embedClient";
 import { getCustomer } from "../../lib/matrix";
+import { CALM, detectMood, moodTrend, type Mood, type MoodTrend } from "../../lib/mood";
 import { aiClassify, type AiResult } from "../../lib/nano";
-import { classify, type Classification, type EmbeddingIndex } from "../../lib/similarity";
+import { classify, type Classification } from "../../lib/similarity";
 import type { CustomerId } from "../../lib/types";
 import { useContent } from "../ContentContext";
 import { useAiAssist } from "../useAiAssist";
 
-const index = indexData as EmbeddingIndex;
 const MIN_CHARS = 12;
 const DEBOUNCE_MS = 350;
 /** Wait a little longer before asking the on-device AI, so it isn't started on every keystroke. */
@@ -24,7 +23,11 @@ interface Props {
   presetText?: string;
   /** Allow the optional on-device AI read (off in demos, which should be repeatable). */
   allowAi?: boolean;
+  /** The customer's mood on the latest line, and how it's moving. */
+  onMood?: (mood: Mood, trend: MoodTrend | null) => void;
 }
+
+const TREND_LABEL: Record<MoodTrend, string> = { rising: "▲ heating up", easing: "▼ calming down", steady: "" };
 
 interface Shown {
   /** This line combined with the call's earlier lines: what the agent sees. */
@@ -42,14 +45,16 @@ interface AiState {
 
 // Free-text box: the agent types or pastes what the customer said (or a quick note about them) and gets
 // a suggested type. Everything runs on this device; the text is never stored or sent anywhere.
-export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, presetText, allowAi = true }: Props) {
-  const { content } = useContent();
+export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, onMood, presetText, allowAi = true }: Props) {
+  const { content, exampleIndex } = useContent();
   const ai = useAiAssist();
   const [text, setText] = useState("");
   const [status, setStatus] = useState<ModelStatus>("idle");
   const [shown, setShown] = useState<Shown | null>(null);
   const [memory, setMemory] = useState<CallMemory>(emptyCall);
   const [aiState, setAiState] = useState<AiState | null>(null);
+  /** Moods of the lines accepted this call, newest first (in memory only). */
+  const [moodLog, setMoodLog] = useState<Mood[]>([]);
   const latest = useRef(0);
   // Read inside async callbacks, which must see the current values.
   const statusRef = useRef(status);
@@ -58,6 +63,8 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, prese
   memoryRef.current = memory;
   const contentRef = useRef(content);
   contentRef.current = content;
+  const indexRef = useRef(exampleIndex);
+  indexRef.current = exampleIndex;
 
   useEffect(() => {
     warmUp();
@@ -78,12 +85,12 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, prese
     return () => clearInterval(id);
   }, [presetText]);
 
-  const keywordOnly = (trimmed: string) => classify(null, index, { text: trimmed, cues: contentRef.current.cues });
+  const keywordOnly = (trimmed: string) => classify(null, indexRef.current, { text: trimmed, cues: contentRef.current.cues });
 
   /** Embedding + keyword cues; keyword cues alone if the model can't load. */
   async function classifyText(trimmed: string): Promise<Classification> {
     const vector = statusRef.current === "error" ? null : await embed(trimmed);
-    return classify(vector, index, { text: trimmed, cues: contentRef.current.cues });
+    return classify(vector, indexRef.current, { text: trimmed, cues: contentRef.current.cues });
   }
 
   function show(line: Classification, forText: string) {
@@ -127,6 +134,9 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, prese
     };
   }, [needsAi, shown?.forText]);
 
+  const trimmed = text.trim();
+  const long = trimmed.length >= MIN_CHARS;
+
   // What to show: the AI's read when it answered for this text and the fast path wasn't clear.
   const fast = shown && shown.result.confidence !== "none" ? shown.result : null;
   const aiNow = aiState && shown && aiState.forText === shown.forText ? aiState : null;
@@ -142,6 +152,16 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, prese
     : [...new Set((shown?.result.cues ?? []).filter((h) => h.customerId === primary).map((h) => h.match))].slice(0, 3);
   const callLines = current(memory).lines.length;
 
+  // Mood: the line being typed, or else the last accepted line. The trend compares it with the line before.
+  const typedMood = long ? detectMood(trimmed, content.moods) : null;
+  const mood = typedMood ?? moodLog[0] ?? CALM;
+  const previousHeat = (typedMood ? moodLog[0] : moodLog[1])?.heat ?? null;
+  const trend = mood === CALM && !moodLog.length ? null : moodTrend(previousHeat, mood.heat);
+  const moodName = mood.id === "calm" ? "Calm" : content.moods.find((m) => m.id === mood.id)?.name ?? mood.id;
+  const showMood = mood.id !== "calm" || trend === "easing";
+
+  useEffect(() => onMood?.(mood, trend), [mood.id, mood.heat, trend]);
+
   useEffect(() => onSuggest(primary), [primary]);
 
   const name = (id: CustomerId) => getCustomer(id, content)?.name.replace(/^The /, "");
@@ -152,6 +172,7 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, prese
 
   const accept = (id: CustomerId, line: Classification | null = shown?.line ?? null) => {
     if (line) setMemory((m) => commitChoice(m, line, id));
+    if (long) setMoodLog((log) => [detectMood(trimmed, contentRef.current.moods), ...log].slice(0, 20));
     onAccept(id);
     setText("");
     setAiState(null);
@@ -169,13 +190,11 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, prese
 
   const newCall = () => {
     setMemory(emptyCall());
+    setMoodLog([]);
     setText("");
     setAiState(null);
     onNewCall?.();
   };
-
-  const trimmed = text.trim();
-  const long = trimmed.length >= MIN_CHARS;
 
   return (
     <section className="describe" aria-label="Describe the customer">
@@ -227,8 +246,14 @@ export default function DescribeCustomer({ onSuggest, onAccept, onNewCall, prese
           <span className="muted">Stays on this device.</span>
         )}
       </p>
-      {(why.length > 0 || callLines > 0 || (primary && aiNow?.pending) || (primary && shown?.line.keywordOnly && !aiPick)) && (
+      {(why.length > 0 || callLines > 0 || showMood || (primary && aiNow?.pending) || (primary && shown?.line.keywordOnly && !aiPick)) && (
         <p className="describe-meta">
+          {showMood && (
+            <span className={`mood-chip mood-${mood.id}`} title={mood.hits.map((h) => h.match).join(", ") || undefined}>
+              Mood: {moodName}
+              {trend && trend !== "steady" && <span className="trend"> {TREND_LABEL[trend]}</span>}
+            </span>
+          )}
           {why.length > 0 && (
             <span className="why">
               {aiPick ? "AI heard" : "Heard"}{" "}

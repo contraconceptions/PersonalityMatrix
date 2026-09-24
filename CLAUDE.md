@@ -25,6 +25,8 @@ npm run typecheck     # tsc --noEmit
 npm run build         # fetch model + typecheck + vite build → dist/ (load unpacked in chrome://extensions)
 npm run embed         # REQUIRED after editing src/data/customerExamples.json (a test fails otherwise)
 npm run eval          # recognition yardstick (see docs/research/recognition-analysis.md)
+npm run eval -- --examples client-data/client-examples.json --heldout client-data/client-heldout.json
+npm run prepare-examples -- labeled.csv client-data   # client CSV → import file + held-out set (client-data/ is git-ignored)
 npm run package       # build + zip → release/personality-matrix-<version from public/manifest.json>.zip
 ```
 
@@ -65,6 +67,11 @@ signal. `vector === null` means keyword-only mode (the model is loading or faile
 isn't clear and the Settings switch (`aiAssist`) is on. The constants are fitted by leave-one-out
 (`npm run eval`); `docs/research/recognition-analysis.md` explains them. `MODEL_ID` in `similarity.ts`
 must match `scripts/embed.mjs`. Cues are part of `Content` and can be replaced through the content import.
+`src/lib/mood.ts` + `src/data/moods.json` give a per-line mood (calm/anxious/frustrated/escalating + trend),
+separate from the accumulated style. It drives the "Right now" block in `MatrixOutput`.
+Client example lines (`customerExamples` import section, `src/lib/clientExamples.ts`) are embedded in the
+browser at import time and stored as `clientIndex`. `ContentContext` exposes the merged `exampleIndex`, which
+UI code must use instead of importing `exampleEmbeddings.json` directly.
 
 **Storage** (`src/lib/storage.ts`): `chrome.storage.local` in the extension, `localStorage` under
 `npm run dev`. Always go through `getJSON`/`setJSON`/`removeKey`.
@@ -94,3 +101,4 @@ phrases only), `quiz.ts` (agent self-assessment), `shortcuts.ts` (keys 1–6 and
   `custom` once reviewed). Methodology is in `docs/research/matrix-methodology.md`. The tests enforce
   data integrity (all 36 pairs, valid ids, non-empty phrases) and that every demo line classifies clearly.
 - Don't quote the research report's AHT/CSAT figures as fact. They are unverified.
+- Never commit real client lines. `client-data/` is git-ignored for this reason.

@@ -1,0 +1,8 @@
+text,label_a,label_b,notes
+"Which of these two plans has the lower total cost over a year?",analytical,analytical,
+"I'm so worried, the letter says they'll shut my gas off Friday",distressed,distressed,
+"Third time this month. Put your supervisor on.",demanding,demanding,
+"I don't know, maybe I should ask my son first",hesitant,hesitant,
+"Oh you'll laugh, my parrot learned the hold music!",expressive,expressive,
+"Sure, I've got the order confirmation right here",cooperative,cooperative,
+"I just need to know what happens if I can't pay by the 15th",distressed,analytical,"labelers disagree: dropped, and counted in the agreement report"

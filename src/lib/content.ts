@@ -1,4 +1,5 @@
-import { checkPattern } from "./cues";
+import { validateExamples, type ClientExamples } from "./clientExamples";
+import { checkPattern, type Matchable } from "./cues";
 import { agents, customers, defaultContent } from "./matrix";
 import type {
   BrandVoice,
@@ -8,6 +9,8 @@ import type {
   EgoState,
   Fit,
   MatrixNode,
+  MoodId,
+  MoodState,
   TriggerPhrase,
 } from "./types";
 
@@ -24,6 +27,9 @@ export interface ContentOverrides {
   triggers?: TriggerPhrase[];
   brandVoice?: BrandVoice;
   cues?: CueFamily[];
+  /** Replace built-in moods by id. */
+  moods?: MoodState[];
+  customerExamples?: ClientExamples;
 }
 
 export type ValidationResult =
@@ -60,6 +66,8 @@ export function mergeContent(overrides: ContentOverrides | null, base: Content =
     triggers: overrides.triggers ?? base.triggers,
     brandVoice: overrides.brandVoice ?? base.brandVoice,
     cues: overrides.cues ?? base.cues,
+    moods: base.moods.map((m) => overrides.moods?.find((o) => o.id === m.id) ?? m),
+    ...(overrides.customerExamples ? { customerExamples: overrides.customerExamples } : {}),
   };
 }
 
@@ -74,6 +82,10 @@ export function exportContent(content: Content): Record<string, unknown> {
     customerProfiles: content.customerProfiles.map(({ pcmType: _p, ...rest }) => rest),
     interactionMatrix: content.interactionMatrix,
     cues: content.cues,
+    moods: content.moods,
+    ...(content.customerExamples
+      ? { customerExamplesMode: content.customerExamples.mode, customerExamples: content.customerExamples.lines }
+      : {}),
   };
 }
 
@@ -88,6 +100,38 @@ function checkTriggers(v: unknown, where: string, errors: string[]): v is Trigge
     }
   });
   return true;
+}
+
+const MOOD_IDS: MoodId[] = ["anxious", "frustrated", "escalating"];
+
+/** Validate one cue family (customer-type or mood cues). Returns it cleaned, or null after adding errors. */
+function checkFamily(c: unknown, at: string, errors: string[]): Matchable | null {
+  if (!isObj(c)) {
+    errors.push(`${at} must be an object.`);
+    return null;
+  }
+  const bad: string[] = [];
+  if (!isStr(c.why)) bad.push(`"why"`);
+  if (typeof c.weight !== "number" || !(c.weight > 0 && c.weight <= 3)) bad.push(`"weight" (a number above 0, up to 3)`);
+  if (c.negatable !== undefined && typeof c.negatable !== "boolean") bad.push(`"negatable" (true or false)`);
+  if (!isStrArr(c.patterns) || c.patterns.length === 0) bad.push(`"patterns" (list of text)`);
+  if (bad.length) {
+    errors.push(`${at} is missing or has invalid ${bad.join(", ")}.`);
+    return null;
+  }
+  for (const p of c.patterns as string[]) {
+    const problem = p.length > MAX_PATTERN ? `is longer than ${MAX_PATTERN} characters` : checkPattern(p);
+    if (problem) {
+      errors.push(`${at}: pattern "${p.slice(0, 40)}" ${problem}.`);
+      return null;
+    }
+  }
+  return {
+    why: c.why as string,
+    weight: c.weight as number,
+    ...(c.negatable === undefined ? {} : { negatable: c.negatable as boolean }),
+    patterns: c.patterns as string[],
+  };
 }
 
 /** Validate an imported file (already JSON-parsed). Returns clean overrides or readable errors. */
@@ -190,27 +234,44 @@ export function validateContent(data: unknown): ValidationResult {
       overrides.cues = [];
       data.cues.forEach((c, i) => {
         const at = `cues[${i}]`;
-        if (!isObj(c)) return void errors.push(`${at} must be an object.`);
-        const bad: string[] = [];
-        if (!CUSTOMER_IDS.includes(c.customerId as string)) bad.push(`"customerId" (one of ${CUSTOMER_IDS.join(", ")})`);
-        if (!isStr(c.why)) bad.push(`"why"`);
-        if (typeof c.weight !== "number" || !(c.weight > 0 && c.weight <= 3)) bad.push(`"weight" (a number above 0, up to 3)`);
-        if (c.negatable !== undefined && typeof c.negatable !== "boolean") bad.push(`"negatable" (true or false)`);
-        if (!isStrArr(c.patterns) || c.patterns.length === 0) bad.push(`"patterns" (list of text)`);
-        if (bad.length) return void errors.push(`${at} is missing or has invalid ${bad.join(", ")}.`);
-        for (const p of c.patterns as string[]) {
-          const problem = p.length > MAX_PATTERN ? `is longer than ${MAX_PATTERN} characters` : checkPattern(p);
-          if (problem) return void errors.push(`${at}: pattern "${p.slice(0, 40)}" ${problem}.`);
+        if (isObj(c) && !CUSTOMER_IDS.includes(c.customerId as string)) {
+          return void errors.push(`${at} is missing or has invalid "customerId" (one of ${CUSTOMER_IDS.join(", ")}).`);
         }
-        overrides.cues!.push({
-          customerId: c.customerId as CueFamily["customerId"],
-          why: c.why as string,
-          weight: c.weight as number,
-          ...(c.negatable === undefined ? {} : { negatable: c.negatable as boolean }),
-          patterns: c.patterns as string[],
+        const f = checkFamily(c, at, errors);
+        if (f) overrides.cues!.push({ customerId: (c as { customerId: CueFamily["customerId"] }).customerId, ...f });
+      });
+    }
+  }
+
+  if (data.moods !== undefined) {
+    if (!Array.isArray(data.moods)) errors.push(`"moods" must be a list.`);
+    else {
+      overrides.moods = [];
+      data.moods.forEach((m, i) => {
+        const at = `moods[${i}]`;
+        if (!isObj(m) || !MOOD_IDS.includes(m.id as MoodId)) return void errors.push(`${at}: "id" must be one of ${MOOD_IDS.join(", ")}.`);
+        const bad: string[] = [];
+        if (!isStr(m.name)) bad.push(`"name"`);
+        if (!isStr(m.tip)) bad.push(`"tip"`);
+        if (!isStrArr(m.phrasesToUse)) bad.push(`"phrasesToUse" (list of text)`);
+        if (!Array.isArray(m.cues)) bad.push(`"cues" (list)`);
+        if (bad.length) return void errors.push(`${at} is missing or has invalid ${bad.join(", ")}.`);
+        const families = (m.cues as unknown[]).map((c, j) => checkFamily(c, `${at}.cues[${j}]`, errors));
+        if (families.some((f) => !f)) return;
+        overrides.moods!.push({
+          id: m.id as MoodId,
+          name: m.name as string,
+          tip: m.tip as string,
+          phrasesToUse: m.phrasesToUse as string[],
+          cues: families as Matchable[],
         });
       });
     }
+  }
+
+  if (data.customerExamples !== undefined) {
+    const ex = validateExamples(data.customerExamples, data.customerExamplesMode, CUSTOMER_IDS as CustomerProfile["id"][], errors);
+    if (ex) overrides.customerExamples = ex;
   }
 
   if (errors.length) {

@@ -33,6 +33,7 @@ npm run typecheck  # tsc --noEmit
 npm run build      # type-check + build the extension into dist/ (~50 MB incl. model)
 npm run embed      # re-run after editing src/data/customerExamples.json
 npm run eval       # recognition yardstick: classifier comparison + held-out/challenge accuracy
+npm run prepare-examples -- labeled.csv client-data   # client lines → import file + held-out set
 npm run package    # build + zip to release/personality-matrix-<version>.zip for clients
 ```
 
@@ -113,11 +114,17 @@ type from two signals:
   or "you always…" vs. "I always mess up"). The panel shows the words it heard. If the model can't load, keywords alone still give suggestions.
 
 Each line the agent accepts adds to that call's evidence, so a customer's style builds up over the call.
-**New call** clears it. Optionally, Chrome's built-in on-device AI (Settings → On-device AI, off by
+**New call** clears it. Mood is read line by line (calm, anxious, frustrated or escalating, with
+"heating up" / "calming down"). While it isn't calm, the guidance opens with a **Right now** tip and
+de-escalation phrases. Optionally, Chrome's built-in on-device AI (Settings → On-device AI, off by
 default, Chrome 138+ on capable hardware) takes a closer look when the suggestion is unclear.
 
 Nothing the agent types is sent anywhere or stored. The worker refuses any fetch from outside the
-extension, and the call history keeps only per-type scores, in memory. To improve accuracy, add real
-(anonymized) example lines and run `npm run embed`, or tune the cues through the content import.
+extension, and the call history keeps only per-type scores, in memory.
+
+**Using a client's real lines (no rebuild):** label anonymized lines in a CSV (template:
+`docs/examples/labeling-template.csv`), run `npm run prepare-examples -- labeled.csv client-data`, then import
+`client-data/client-examples.json` in Settings → Guidance content. The panel learns the lines on the device. See
+`docs/NEXT-STEPS.md` §4. Cues and moods can be tuned through the same content import.
 `npm run eval` and `tests/semantic.test.ts` measure accuracy. The method and research are in
 `docs/research/recognition-analysis.md`.

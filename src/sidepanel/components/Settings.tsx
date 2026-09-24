@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { buildClientIndex, countLines, type ClientIndex } from "../../lib/clientExamples";
 import { exportContent, validateContent } from "../../lib/content";
+import { embed } from "../../lib/embedClient";
 import { downloadText, today } from "../../lib/download";
 import { getAgent, getCustomer } from "../../lib/matrix";
 import { prepareAi } from "../../lib/nano";
@@ -200,14 +202,17 @@ function BrandVoiceSection() {
 }
 
 function ContentSection() {
-  const { content, overrides, saveOverrides } = useContent();
+  const { content, overrides, saveOverrides, examplesStale } = useContent();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [learning, setLearning] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
   const custom =
-    overrides && (overrides.interactionMatrix || overrides.customerProfiles || overrides.triggers || overrides.cues);
+    overrides &&
+    (overrides.interactionMatrix || overrides.customerProfiles || overrides.triggers || overrides.cues || overrides.moods || overrides.customerExamples);
+  const exampleCount = overrides?.customerExamples ? countLines(overrides.customerExamples.lines) : 0;
 
   const onFile = async (file: File) => {
     setErrors([]);
@@ -224,9 +229,26 @@ function ContentSection() {
       setErrors(v.errors);
       return;
     }
-    await saveOverrides({ ...overrides, ...v.overrides });
+    // Example lines are embedded on this device first; if that fails, nothing from the file is saved.
+    let clientIndex: ClientIndex | undefined;
+    const ex = v.overrides.customerExamples;
+    if (ex) {
+      try {
+        setLearning("Learning example lines…");
+        clientIndex = await buildClientIndex(ex, embed, (done, total) =>
+          setLearning(`Learning example lines… ${done} of ${total}`),
+        );
+      } catch (e) {
+        setErrors([e instanceof Error ? e.message : String(e)]);
+        return;
+      } finally {
+        setLearning(null);
+      }
+    }
+    await saveOverrides({ ...overrides, ...v.overrides }, clientIndex);
     const n = v.overrides.interactionMatrix?.length ?? 0;
-    setMessage(`Imported ${file.name}${n ? ` (${plural(n, "pairing", "pairings")})` : ""}.`);
+    const parts = [n && plural(n, "pairing", "pairings"), ex && plural(countLines(ex.lines), "example line", "example lines")].filter(Boolean);
+    setMessage(`Imported ${file.name}${parts.length ? ` (${parts.join(", ")})` : ""}.`);
   };
 
   return (
@@ -236,6 +258,14 @@ function ContentSection() {
         {custom ? "Using imported guidance." : "Using the built-in guidance."} Export to edit it, then import the
         file. Sections in the file replace the current ones.
       </p>
+      {exampleCount > 0 && (
+        <p className="hint">
+          Suggestions also learn from {plural(exampleCount, "imported example line", "imported example lines")}
+          {overrides?.customerExamples?.mode === "replace" ? " (instead of the built-in ones)" : ""}.
+          {examplesStale && <span className="danger"> They need to be learned again: import the file once more.</span>}
+        </p>
+      )}
+      {learning && <p className="muted small">{learning}</p>}
       <div className="actions-row">
         <button
           className="secondary"
