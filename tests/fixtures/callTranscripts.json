@@ -1,0 +1,8 @@
+[
+  { "expected": "demanding", "lines": ["Yeah hi, I'm calling about my bill again.", "This is the third month in a row you've charged me twice.", "I want it credited today or I'm cancelling."] },
+  { "expected": "distressed", "lines": ["Hi, um, I got a letter about my account.", "It says my service gets cut off Friday and I just lost my job.", "I don't know what to do, I'm really scared."] },
+  { "expected": "analytical", "lines": ["Hi, I have a question about my statement.", "There's a $14.99 line I don't recognize.", "Which plan feature is that tied to, and when did it start?"] },
+  { "expected": "hesitant", "lines": ["Hi, I was looking at upgrading my plan.", "I'm not sure the bigger one is worth it though.", "Maybe I should think about it and call back."] },
+  { "expected": "expressive", "lines": ["Hi there! How's your day going?", "So we just got back from the lake and the internet was out the whole time, what a week!", "Anyway, long story, but my modem is blinking."] },
+  { "expected": "cooperative", "lines": ["Hi, I need to update my card on file.", "Sure, I have the account number ready.", "Great, go ahead, that works for me."] }
+]

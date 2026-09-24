@@ -1,10 +1,23 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  CAPTURE_KEY,
+  CAPTURE_SCRIPT_ID,
+  checkSelector,
+  originPattern,
+  toMatchPattern,
+  type CaptureConfig,
+} from "../../lib/capture";
+import { buildClientIndex, countLines, type ClientIndex } from "../../lib/clientExamples";
 import { exportContent, validateContent } from "../../lib/content";
+import { embed } from "../../lib/embedClient";
 import { downloadText, today } from "../../lib/download";
 import { getAgent, getCustomer } from "../../lib/matrix";
+import { prepareAi } from "../../lib/nano";
+import { getJSON, setJSON } from "../../lib/storage";
 import type { AgentId, BrandVoice, CustomerId } from "../../lib/types";
 import { clearEvents, loadEvents, summarize, toCsv, type UsageEvent } from "../../lib/usage";
 import { useContent } from "../ContentContext";
+import { useAiAssist } from "../useAiAssist";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -31,10 +44,212 @@ export default function Settings({ onBack, onStartDemo }: Props) {
         </button>
       </section>
 
+      <AiSection />
+      <CaptureSection />
       <BrandVoiceSection />
       <ContentSection />
       <UsageSection />
     </main>
+  );
+}
+
+function AiSection() {
+  const { content } = useContent();
+  const ai = useAiAssist();
+  const [progress, setProgress] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const download = async () => {
+    setError(null);
+    setProgress(0);
+    ai.setStatus("downloading");
+    try {
+      await prepareAi(content.customerProfiles, setProgress);
+      await ai.setEnabled(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Chrome couldn't prepare the model.");
+    } finally {
+      setProgress(null);
+      await ai.refresh();
+    }
+  };
+
+  let body: JSX.Element;
+  switch (ai.status) {
+    case "checking":
+      body = <p className="muted small">Checking this browser…</p>;
+      break;
+    case "unsupported":
+      body = <p className="hint">Not available in this browser. It needs Chrome 138 or later on desktop.</p>;
+      break;
+    case "unavailable":
+      body = (
+        <p className="hint">
+          Not available on this computer. Chrome needs a graphics card with more than 4 GB of memory (or 16 GB of RAM
+          and 4 CPU cores) and 22 GB of free disk space, and your organization may have turned it off.
+        </p>
+      );
+      break;
+    case "downloadable":
+    case "downloading":
+      body = (
+        <div className="actions-row">
+          <button className="primary" onClick={download} disabled={progress !== null}>
+            {progress === null ? "Download and turn on" : `Downloading… ${Math.round(progress * 100)}%`}
+          </button>
+          <span className="muted small">Chrome downloads its model once. It can take a while.</span>
+        </div>
+      );
+      break;
+    case "available":
+      body = (
+        <label className="toggle">
+          <input type="checkbox" checked={ai.enabled} onChange={(e) => void ai.setEnabled(e.target.checked)} />
+          <span>Ask the on-device AI when a suggestion is unclear</span>
+        </label>
+      );
+      break;
+  }
+
+  return (
+    <section className="panel">
+      <h2>On-device AI (optional)</h2>
+      <p className="hint">
+        Uses Chrome's built-in model to read unclear lines more closely (negation, agent notes, mixed signals) and
+        shows the words it went on. It runs on this computer: what you type isn't sent anywhere or stored.
+      </p>
+      {body}
+      {error && <p className="errors">{error}</p>}
+    </section>
+  );
+}
+
+const EMPTY_CAPTURE: CaptureConfig = { enabled: false, match: "", container: "", customerMessage: "" };
+const extensionApis = () => typeof chrome !== "undefined" && Boolean(chrome.permissions && chrome.scripting);
+
+function CaptureSection() {
+  const [cfg, setCfg] = useState<CaptureConfig>(EMPTY_CAPTURE);
+  const [site, setSite] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+
+  useEffect(() => {
+    getJSON<CaptureConfig>(CAPTURE_KEY).then((c) => {
+      if (!c) return;
+      setCfg(c);
+      setSite(c.match);
+    });
+  }, []);
+
+  const field = (k: "container" | "customerMessage") => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setCfg((c) => ({ ...c, [k]: e.target.value }));
+
+  /** Tabs in this window that are on the configured site (needs the site permission). */
+  const siteTabs = async (match: string) =>
+    (await chrome.tabs.query({ url: match, currentWindow: true })).filter((t) => t.id !== undefined);
+
+  const turnOn = async () => {
+    setError(null);
+    setInfo(null);
+    const match = toMatchPattern(site);
+    const problem =
+      (!match && "Enter the chat site's address, e.g. support.example.com.") ||
+      checkSelector(cfg.container) ||
+      checkSelector(cfg.customerMessage);
+    if (problem || !match) return setError(problem || null);
+    if (!extensionApis()) return setError("Available when running as the installed extension.");
+    const granted = await chrome.permissions.request({ origins: [originPattern(match)] });
+    if (!granted) return setError("Chrome didn't grant access to that site, so capture stays off.");
+    await chrome.scripting.unregisterContentScripts({ ids: [CAPTURE_SCRIPT_ID] }).catch(() => {});
+    await chrome.scripting.registerContentScripts([
+      { id: CAPTURE_SCRIPT_ID, matches: [match], js: ["capture.js"], runAt: "document_idle", persistAcrossSessions: true },
+    ]);
+    const next = { ...cfg, match, enabled: true };
+    await setJSON(CAPTURE_KEY, next);
+    setCfg(next);
+    setSite(match);
+    // Chat tabs already open get the script now, so there's no need to reload them.
+    for (const t of await siteTabs(match)) {
+      await chrome.scripting.executeScript({ target: { tabId: t.id! }, files: ["capture.js"] }).catch(() => {});
+    }
+    setInfo("On. New customer messages on that site now appear in the box above the customer types.");
+  };
+
+  const turnOff = async () => {
+    setError(null);
+    setInfo(null);
+    const next = { ...cfg, enabled: false };
+    await setJSON(CAPTURE_KEY, next); // the content scripts stop at once
+    setCfg(next);
+    if (extensionApis()) {
+      await chrome.scripting.unregisterContentScripts({ ids: [CAPTURE_SCRIPT_ID] }).catch(() => {});
+      if (cfg.match) await chrome.permissions.remove({ origins: [originPattern(cfg.match)] }).catch(() => false);
+    }
+    setInfo("Off. Access to the site was given back.");
+  };
+
+  const check = async () => {
+    setError(null);
+    setInfo(null);
+    if (!extensionApis() || !cfg.enabled) return;
+    const tabs = await siteTabs(cfg.match);
+    if (!tabs.length) return setInfo("Open the chat page in this window, then check again.");
+    const [res] = await chrome.scripting.executeScript({
+      target: { tabId: tabs[0].id! },
+      args: [cfg.container, cfg.customerMessage],
+      func: (container: string, message: string) => {
+        const c = document.querySelector(container);
+        return { container: Boolean(c), messages: c ? c.querySelectorAll(message).length : 0 };
+      },
+    });
+    const r = res?.result as { container: boolean; messages: number } | undefined;
+    setInfo(
+      !r?.container
+        ? "The conversation element wasn't found on that tab. Check the first selector."
+        : `Found the conversation and ${r.messages} customer ${r.messages === 1 ? "message" : "messages"} on the open tab.`,
+    );
+  };
+
+  return (
+    <section className="panel">
+      <h2>Chat capture (optional)</h2>
+      <p className="hint">
+        For chat and email teams: new customer messages on your chat or CRM page fill the box automatically. You still
+        confirm each suggestion. Chrome asks for access to that one site only. Messages aren't stored or sent anywhere.
+      </p>
+      <div className="rows">
+        <label className="field">
+          <span>Chat site</span>
+          <input value={site} placeholder="support.example.com" onChange={(e) => setSite(e.target.value)} disabled={cfg.enabled} />
+        </label>
+        <label className="field">
+          <span>Conversation element (CSS selector)</span>
+          <input value={cfg.container} placeholder=".conversation" onChange={field("container")} disabled={cfg.enabled} />
+        </label>
+        <label className="field">
+          <span>One customer message (CSS selector)</span>
+          <input value={cfg.customerMessage} placeholder=".message.from-customer" onChange={field("customerMessage")} disabled={cfg.enabled} />
+        </label>
+      </div>
+      <div className="actions-row">
+        {cfg.enabled ? (
+          <>
+            <button className="secondary" onClick={check}>
+              Check on the open tab
+            </button>
+            <button className="link danger" onClick={turnOff}>
+              Turn off
+            </button>
+          </>
+        ) : (
+          <button className="primary" onClick={turnOn}>
+            Turn on
+          </button>
+        )}
+      </div>
+      {info && <p className="ok">{info}</p>}
+      {error && <p className="errors">{error}</p>}
+    </section>
   );
 }
 
@@ -126,13 +341,17 @@ function BrandVoiceSection() {
 }
 
 function ContentSection() {
-  const { content, overrides, saveOverrides } = useContent();
+  const { content, overrides, saveOverrides, examplesStale } = useContent();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [learning, setLearning] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
 
-  const custom = overrides && (overrides.interactionMatrix || overrides.customerProfiles || overrides.triggers);
+  const custom =
+    overrides &&
+    (overrides.interactionMatrix || overrides.customerProfiles || overrides.triggers || overrides.cues || overrides.moods || overrides.customerExamples);
+  const exampleCount = overrides?.customerExamples ? countLines(overrides.customerExamples.lines) : 0;
 
   const onFile = async (file: File) => {
     setErrors([]);
@@ -149,9 +368,26 @@ function ContentSection() {
       setErrors(v.errors);
       return;
     }
-    await saveOverrides({ ...overrides, ...v.overrides });
+    // Example lines are embedded on this device first; if that fails, nothing from the file is saved.
+    let clientIndex: ClientIndex | undefined;
+    const ex = v.overrides.customerExamples;
+    if (ex) {
+      try {
+        setLearning("Learning example lines…");
+        clientIndex = await buildClientIndex(ex, embed, (done, total) =>
+          setLearning(`Learning example lines… ${done} of ${total}`),
+        );
+      } catch (e) {
+        setErrors([e instanceof Error ? e.message : String(e)]);
+        return;
+      } finally {
+        setLearning(null);
+      }
+    }
+    await saveOverrides({ ...overrides, ...v.overrides }, clientIndex);
     const n = v.overrides.interactionMatrix?.length ?? 0;
-    setMessage(`Imported ${file.name}${n ? ` (${plural(n, "pairing", "pairings")})` : ""}.`);
+    const parts = [n && plural(n, "pairing", "pairings"), ex && plural(countLines(ex.lines), "example line", "example lines")].filter(Boolean);
+    setMessage(`Imported ${file.name}${parts.length ? ` (${parts.join(", ")})` : ""}.`);
   };
 
   return (
@@ -161,6 +397,14 @@ function ContentSection() {
         {custom ? "Using imported guidance." : "Using the built-in guidance."} Export to edit it, then import the
         file. Sections in the file replace the current ones.
       </p>
+      {exampleCount > 0 && (
+        <p className="hint">
+          Suggestions also learn from {plural(exampleCount, "imported example line", "imported example lines")}
+          {overrides?.customerExamples?.mode === "replace" ? " (instead of the built-in ones)" : ""}.
+          {examplesStale && <span className="danger"> They need to be learned again: import the file once more.</span>}
+        </p>
+      )}
+      {learning && <p className="muted small">{learning}</p>}
       <div className="actions-row">
         <button
           className="secondary"
@@ -230,6 +474,30 @@ function ContentSection() {
   );
 }
 
+function SuggestionStats({ s }: { s: ReturnType<typeof summarize>["suggestions"] }) {
+  const pct = (a: number, n: number) => `${Math.round((a / n) * 100)}%`;
+  const name = (id: CustomerId) => getCustomer(id)?.name.replace(/^The /, "");
+  const byConf = (["clear", "close"] as const).filter((c) => s.byConfidence[c].shown > 0);
+  return (
+    <div className="suggestion-stats">
+      <p className="stats">
+        Agents went with the suggestion {s.agreed} of {s.shown} times ({pct(s.agreed, s.shown)})
+        {byConf.length > 0 && (
+          <span className="muted">
+            {" "}
+            · {byConf.map((c) => `${c} ${pct(s.byConfidence[c].agreed, s.byConfidence[c].shown)}`).join(", ")}
+          </span>
+        )}
+      </p>
+      {s.topOverrides.length > 0 && (
+        <p className="muted small">
+          Most changed: {s.topOverrides.map((o) => `${name(o.suggested)} → ${name(o.chosen)} (${o.count})`).join(", ")}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function UsageSection() {
   const [events, setEvents] = useState<UsageEvent[] | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -247,7 +515,7 @@ function UsageSection() {
   return (
     <section className="panel">
       <h2>Usage on this device</h2>
-      <p className="hint">Records which customer types come up and which phrases get copied, never what customers said.</p>
+      <p className="hint">Records which customer types come up, which phrases get copied, and whether agents went with the suggestion. Never what customers said.</p>
       {events.length === 0 ? (
         <p className="muted small">Nothing recorded yet.</p>
       ) : (
@@ -257,6 +525,7 @@ function UsageSection() {
             {plural(s.copies, "phrase copied", "phrases copied")}
             {s.selections > 0 && <> · {suggestedPct}% from suggestions</>}
           </p>
+          {s.suggestions.shown > 0 && <SuggestionStats s={s.suggestions} />}
           {s.topPairs.length > 0 && (
             <ol className="top-list">
               {s.topPairs.map((p) => (

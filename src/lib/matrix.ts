@@ -1,4 +1,6 @@
 import agentData from "../data/agentProfiles.json";
+import cueData from "../data/cues.json";
+import moodData from "../data/moods.json";
 import customerData from "../data/customerProfiles.json";
 import matrixData from "../data/interactionMatrix.json";
 import phraseData from "../data/phrases.json";
@@ -7,11 +9,13 @@ import type {
   AgentId,
   AgentProfile,
   Content,
+  CueFamily,
   CustomerId,
   CustomerProfile,
   EgoState,
   Guidance,
   MatrixNode,
+  MoodState,
   TriggerPhrase,
 } from "./types";
 
@@ -19,6 +23,8 @@ export const agents = agentData as AgentProfile[];
 export const customers = customerData as CustomerProfile[];
 export const matrix = matrixData as MatrixNode[];
 export const triggers = phraseData as TriggerPhrase[];
+export const cues = cueData as CueFamily[];
+export const moods = moodData as MoodState[];
 
 /** The built-in guidance. Supervisors can override parts of it (see content.ts). */
 export const defaultContent: Content = {
@@ -26,6 +32,8 @@ export const defaultContent: Content = {
   interactionMatrix: matrix,
   triggers,
   brandVoice: { terms: [], extraTriggers: [] },
+  cues,
+  moods,
 };
 
 // Ego-state pairs where a stimulus from one side naturally gets the expected

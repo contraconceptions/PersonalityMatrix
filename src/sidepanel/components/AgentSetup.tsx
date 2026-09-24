@@ -3,6 +3,7 @@ import { agents, getAgent } from "../../lib/matrix";
 import type { QuizResult } from "../../lib/quiz";
 import type { AgentId } from "../../lib/types";
 import AgentQuiz from "./AgentQuiz";
+import { BrandMark } from "./Icon";
 
 type Mode = "intro" | "quiz" | "result" | "pick";
 
@@ -91,6 +92,10 @@ export default function AgentSetup({ onSelect, onStartDemo }: Props) {
 
   return (
     <main className="app intro">
+      <div className="brand">
+        <BrandMark />
+        <span>PersonalityMatrix</span>
+      </div>
       <h1>Find your communication style</h1>
       <p className="lead">
         Ten quick questions about how you handle calls. There are no right answers. Pick what
@@ -107,6 +112,7 @@ export default function AgentSetup({ onSelect, onStartDemo }: Props) {
           Watch a demo
         </button>
       </div>
+      <p className="privacy-note">Runs entirely on this device. What customers say is never stored or sent anywhere.</p>
     </main>
   );
 }

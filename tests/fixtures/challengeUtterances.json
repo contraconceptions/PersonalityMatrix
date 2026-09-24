@@ -1,0 +1,43 @@
+[
+  { "text": "i need the exact date the credit posts and the reference number", "expected": "analytical", "trap": "asr: no punctuation" },
+  { "text": "Sorry to bother you, but which fee is the $12 one on line 4?", "expected": "analytical", "trap": "apology is politeness, not distress" },
+  { "text": "cust wants itemized breakdown of last 3 invoices + how proration is calculated", "expected": "analytical", "trap": "agent note, third person" },
+  { "text": "I'm not upset, I just want to understand how you got to that number.", "expected": "analytical", "trap": "negated emotion" },
+  { "text": "Does the 14-day return window start at purchase or at delivery?", "expected": "analytical", "trap": "clean" },
+  { "text": "Every time I read the contract I see a different figure, so walk me through the math.", "expected": "analytical", "trap": "absolutist 'every time' without blame" },
+
+  { "text": "i dont know what to do they said theyll cut the water off friday", "expected": "distressed", "trap": "asr: no punctuation, no apostrophes" },
+  { "text": "caller crying, husband passed last month, can't access joint account", "expected": "distressed", "trap": "agent note, third person" },
+  { "text": "Nothing ever works for me, I always mess these things up.", "expected": "distressed", "trap": "absolutist words aimed at self, not the company" },
+  { "text": "Please don't hang up, I've been on hold for an hour and I just need someone to help me.", "expected": "distressed", "trap": "long hold (usually a demanding cue)" },
+  { "text": "I'm sorry, I'm sorry, I know it's probably my fault.", "expected": "distressed", "trap": "clean" },
+  { "text": "What happens to my kids' coverage if this payment bounces?", "expected": "distressed", "trap": "question form (usually analytical)" },
+
+  { "text": "this is ridiculous you people never get it right", "expected": "demanding", "trap": "asr: no punctuation" },
+  { "text": "cust very angry, 4th call re same outage, threatening to cancel + go to the BBB", "expected": "demanding", "trap": "agent note, third person" },
+  { "text": "I'm not interested in your apology. Credit my account.", "expected": "demanding", "trap": "calm wording, rejects empathy" },
+  { "text": "As a matter of principle, a company should honor what its rep promised me.", "expected": "demanding", "trap": "Persister values language, no shouting" },
+  { "text": "Transfer me to someone with authority. Now.", "expected": "demanding", "trap": "short" },
+  { "text": "Why would I pay for a service that doesn't work? Explain that to me.", "expected": "demanding", "trap": "question form (usually analytical)" },
+
+  { "text": "um i guess maybe the cheaper one or wait what did the other one include", "expected": "hesitant", "trap": "asr with fillers" },
+  { "text": "cust going back and forth between plans, asked same q 3x", "expected": "hesitant", "trap": "agent note, third person" },
+  { "text": "It's not that I don't trust you, I just want to be sure before I switch.", "expected": "hesitant", "trap": "negation" },
+  { "text": "If I sign up today and hate it, am I stuck?", "expected": "hesitant", "trap": "'hate' is a Rebel reaction word" },
+  { "text": "Let me ask my daughter what she thinks and get back to you.", "expected": "hesitant", "trap": "family mention (usually expressive)" },
+  { "text": "Could you just recommend one for me?", "expected": "hesitant", "trap": "clean" },
+
+  { "text": "oh my god you will not believe the week ive had honestly", "expected": "expressive", "trap": "asr: no punctuation" },
+  { "text": "chatty caller, told me about her garden for 5 min before the issue", "expected": "expressive", "trap": "agent note, third person" },
+  { "text": "I love that you picked up so fast, last time I waited forever, anyway, so my modem...", "expected": "expressive", "trap": "complaint mentioned in passing" },
+  { "text": "Haha okay so this is embarrassing but I washed my phone.", "expected": "expressive", "trap": "clean" },
+  { "text": "My sister always says I should just switch to you guys, and here I am!", "expected": "expressive", "trap": "'always' without blame" },
+  { "text": "You sound like my niece! Where are you guys located?", "expected": "expressive", "trap": "clean" },
+
+  { "text": "yep account ending 4471 go ahead", "expected": "cooperative", "trap": "asr, very short" },
+  { "text": "cust has order # ready, just needs tracking link resent", "expected": "cooperative", "trap": "agent note, third person" },
+  { "text": "No worries at all, take your time looking it up.", "expected": "cooperative", "trap": "'worries' is a distress word" },
+  { "text": "I already tried unplugging it for 30 seconds, still blinking orange.", "expected": "cooperative", "trap": "problem report, not emotion" },
+  { "text": "Okay, I'll hold while you check, thanks.", "expected": "cooperative", "trap": "clean" },
+  { "text": "That's fine, I'm not in a rush. What do you need me to do?", "expected": "cooperative", "trap": "negation" }
+]

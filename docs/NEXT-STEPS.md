@@ -17,7 +17,7 @@ this is the working detail behind the unchecked boxes.
 | Phase 2: offline suggestions | Done; accuracy is based on **synthetic** example lines (see §4) |
 | Phase 3: demo, brand voice, import/export, usage log | Done; Settings is **not locked** (see §5) |
 | Phase 4: voice emotion | Not started, needs legal review first (see §6) |
-| Tests | 48 passing (`npm test`), including real-model accuracy checks |
+| Tests | 48 passing (`npm test`), including 2 real-model accuracy checks that skip when `public/models/` is empty |
 | Real-extension test (§2) | Done 2026-09-23: 21/21 automated checks pass as an unpacked extension; manual side-panel check pending |
 | Client build | `npm run package` → `release/personality-matrix-0.1.0.zip` (~23 MB zipped, ~50 MB unpacked) |
 
@@ -26,7 +26,7 @@ this is the working detail behind the unchecked boxes.
 ```sh
 npm install
 npm run setup-model   # downloads the 23 MB model into public/models/ (git-ignored; build also runs it)
-npm test
+npm test              # or: npx vitest run tests/<file>.test.ts / npx vitest run -t "<test name>"
 npm run dev           # UI in a normal tab at /sidepanel.html (uses localStorage instead of chrome.storage)
 npm run package       # build + zip for clients
 ```
@@ -45,6 +45,12 @@ npm run package       # build + zip for clients
   misleading. The demo typing effect is time-based for this reason.
 - **Clipboard tests overwrite the developer's real clipboard.** Save and restore it.
 - `npm run embed` must be re-run after editing `src/data/customerExamples.json`. A test fails if you forget.
+- **`npm install` downloads the `onnxruntime-node` native binary in a postinstall script.** On a restricted
+  network it fails with `ECONNRESET`. `npm install --ignore-scripts` still runs the typecheck and all tests
+  except the 2 real-model ones, but `npm run embed` needs the binary.
+- **Content imports coerce `basis`:** anything other than `research` or `derived` becomes `custom`
+  (`validateContent()` in `src/lib/content.ts`). Overrides live in `chrome.storage.local`, so they apply
+  only on the machine where they were imported.
 - **Branded Chrome (137+) ignores `--load-extension`.** For automated extension tests use Playwright's
   Chromium (`channel: "chromium"`, headless works) with `--load-extension`, and open
   `chrome-extension://<id>/sidepanel.html` in a tab. Playwright can't click the toolbar icon.
@@ -120,24 +126,31 @@ are clear-cut, so the 18/18 held-out score overstates real-world accuracy.
 1. Pull 20–40 opening customer lines per customer type from call notes, chat logs or QA transcripts.
 2. **Anonymize before the data leaves the client:** names, account/order numbers, addresses, dates of
    birth, medical details. Replace them with placeholders like `[name]` and `[number]`.
-3. Two people label each line independently with one of the six types. Keep only lines they agree on
-   (track the agreement rate; below ~70% means the type definitions need clarifying for that client).
-4. Split: about 80% into `customerExamples.json`, about 20% into `tests/fixtures/heldOutUtterances.json`.
-5. `npm run embed`, then `npm test`. The accuracy test now measures the client's real lines.
+3. Two people label each line independently with one of the six types, in a CSV with `text`,
+   `label_a`, `label_b` columns (template: `docs/examples/labeling-template.csv`).
+4. `npm run prepare-examples -- labeled.csv client-data`. The tool:
+   - reports agreement (percent and Cohen's kappa; below ~0.6 means the type definitions need clarifying
+     for this client) and which types were confused;
+   - keeps only the lines both people agreed on;
+   - drops lines with obvious personal data and flags possible names, addresses and dates to check by hand;
+   - splits about 80/20 into `client-data/client-examples.json` and `client-data/client-heldout.json`.
+   `client-data/` is git-ignored: **never commit client lines**.
+5. Measure before and after: `npm run eval -- --examples client-data/client-examples.json --heldout client-data/client-heldout.json`.
+6. Deploy without a rebuild: Settings → Guidance content → Import `client-examples.json` on each agent
+   machine (or ship it in the client's content file). The lines are learned on the device.
 
 ### Targets
 - Top-1 ≥ 75%, top-2 ≥ 90% on real held-out lines. If lower, add examples for the most-confused types first
   (the test prints the misses).
 
-### Feature: per-client example sets without a rebuild (design)
-- Add an optional `customerExamples` section to the content import file
-  (`{ "analytical": ["..."], ... }`).
-- On import, embed the lines **in the browser** with the already-loaded worker, then store the
-  vectors in `chrome.storage.local` (about 3 KB per line; 500 lines ≈ 1.5 MB, fine with the
-  `unlimitedStorage` permission if needed).
-- `DescribeCustomer` uses the imported index when present, otherwise the built-in one.
-- Tests: validation of the section; merge behavior; an embedding-dimension check.
-- Estimate: 1 day.
+### Feature: per-client example sets without a rebuild — done (2026-09-24)
+- Content import section `customerExamples` (`{ "analytical": ["..."], ... }`) with optional
+  `customerExamplesMode`: `"add"` (default, on top of the built-in lines) or `"replace"` (then every type
+  needs at least 3 lines). Up to 1,500 lines. Lines with email addresses or long numbers are rejected.
+- On import, Settings embeds every line with the panel's model and stores the vectors in
+  `chrome.storage.local` (`clientIndex`). If the model isn't available, nothing from the file is saved.
+  `ContentContext` merges them into the index (`src/lib/clientExamples.ts`), matched by a hash of the lines.
+- Tested with a stand-in embedder (unit tests). **Not yet tried with the real model** (not available where it was built).
 
 ---
 
@@ -223,7 +236,19 @@ Real calls are messier, and the example lines were written by us, not by custome
 Work in this order. R1 and R2 need no client data and can start any time. R4 and parts of R5 depend on
 the pilot (§3) and real example lines (§4).
 
-### R1. Measure first (small, about 1 day)
+**Analysis (2026-09-24):** [`research/recognition-analysis.md`](research/recognition-analysis.md) measures
+today's matcher, maps trigger words to the research, compares approaches (including Chrome's built-in
+Gemini Nano and bundled LLMs) and recommends an order of work.
+
+### R1. Measure first (small, about 1 day) — done
+**Done:** `npm run eval` (leave-one-out classifier comparison; held-out + challenge scoring with a
+confusion table when the model is present) and `tests/fixtures/challengeUtterances.json`.
+First result: the runtime top-3 rule gets 74% top-1 leave-one-out vs 86% for a class centroid.
+**Correction logging, done:** every pick records the suggestion that was showing (`suggested`,
+`confidence`, `by`: model / keywords / ai), with no text. Settings → Usage shows how often agents went with
+it, split by confidence, plus the most frequent changes. The CSV has `suggested`, `suggestion_confidence`,
+`suggested_by` and `agreed` columns. Caveat: agreement isn't accuracy, since agents may accept without checking.
+Use it to spot patterns, like a type pair that's often overridden.
 Nothing below can be shown to be an improvement without a yardstick.
 - **Evaluation harness:** extend `tests/semantic.test.ts` (or a `npm run eval` script) to print per-type
   precision/recall, a confusion matrix ("Hesitant → Distressed 30%") and a confidence calibration check
@@ -233,6 +258,17 @@ Nothing below can be shown to be an improvement without a yardstick.
   (embeddings can partially leak the original text). Add a "suggestion accuracy" line and a confusion
   table to Settings → Usage and the CSV export. A pilot then shows exactly where recognition is weak.
 - Tests: logging shape (no text fields), summary math, CSV columns.
+
+**Status (2026-09-24):** built:
+- the decision rule (centroid + calibrated softmax);
+- keyword cues with "why" words;
+- per-call accumulation (style);
+- the per-line mood signal (state: anxious / frustrated / escalating, with a trend and "Right now" guidance);
+- per-client example import plus `npm run prepare-examples`;
+- the optional Gemini Nano read.
+
+See the plan in `research/recognition-analysis.md`. Still open: R1 correction logging, R4 and R5, and a
+real-model run of `npm test` / `npm run eval`, which couldn't be done where this was built.
 
 ### R2. Separate style from state (medium, about 2–3 days; biggest conceptual gain)
 The six types currently mix two ideas the research treats separately. **Style** is the stable Process
@@ -265,7 +301,14 @@ Transactional Analysis emotional state, which shifts line by line.
   ("never", "supervisor" → Demanding). This builds agent trust and teaches the cues.
 - Tests: cue detection, combined scoring, harness comparison recorded in the commit message.
 
-### R4. Better model, once real data exists (medium to large, 2–5 days)
+### R4. Better model, once real data exists (medium to large, 2–5 days) — tooling done, needs real data
+**Done:** `src/data/model.json` is the single model config (id, dtype, prefix, temperature).
+`npm run benchmark-models` downloads each candidate and reports size, speed, the fitted temperature and
+accuracy (leave-one-out plus the held-out, challenge and client held-out sets). It includes bge-small, gte-small
+and e5-small (with its "query: " prefix). `training/setfit/train.py` fine-tunes on labeled lines and exports
+quantized ONNX to `public/models/local/<name>/`, which the benchmark and `model.json` accept as `local/<name>`.
+**Not run here** (Hugging Face was blocked where this was built). The benchmark was checked with stand-in
+embeddings, and the training script was checked for syntax and against the SetFit/Optimum docs only.
 - **Benchmark small embedding models** of similar size (bge-small-en-v1.5, e5-small-v2, gte-small; roughly
   30–35 MB quantized, to be confirmed) with R1's harness on **real** held-out lines. Swap only if it clearly wins.
   Re-check the ONNX Runtime and transformers.js gotchas in §1 when changing models.
@@ -274,7 +317,19 @@ Transactional Analysis emotional state, which shifts line by line.
   This is usually the largest accuracy jump, but it isn't worth doing on synthetic data.
 - Keep a per-client model or example set optional. The default build stays generic.
 
-### R5. Remove the typing (larger, per client; biggest usability gain)
+### R5. Remove the typing (larger, per client; biggest usability gain) — chat done, phone gated
+**Chat / email, done:** Settings → Chat capture (site + conversation selector + customer-message selector).
+It works like this:
+- Chrome grants access to that one site at runtime.
+- A dynamically registered content script (`src/content/capture.ts`) sends each new customer message to the
+  panel. History already on the page is skipped.
+- The captured line fills the box, marked "from chat", and the agent still confirms.
+- It never overwrites what the agent is typing: those messages count toward the call in the background.
+- **Turn off** unregisters the script and gives the site access back.
+
+Tested with a fake chat page and a stubbed `chrome` API, and the built extension loads cleanly. Not tested
+end to end in real Chrome, because the automated browser can't click the permission prompt: do that once by hand.
+**Phone:** not built. It's under the Phase 4 legal gate (§6).
 - **Chat / email teams:** a content script reads new customer messages from the client's CRM or chat page and
   feeds them to the pipeline automatically (the agent still confirms the suggestion). Needs per-client DOM
   selectors, host permissions scoped to that site only, and a clear on/off control. Estimate: 2–4 days per
@@ -294,9 +349,12 @@ Transactional Analysis emotional state, which shifts line by line.
 
 1. Finish the manual side-panel check (§2); the automated extension test is done.
 2. Settings PIN (§5, option A), if the pilot client wants it.
-3. Recognition R1 (measurement + correction logging), so the pilot produces accuracy data.
-4. Recognition R2 + R3 (style vs state, trained classifier, "why" highlights), optional before the pilot.
-5. Collect and anonymize real example lines (§4 protocol) during pilot setup.
+3. Run `npm run setup-model && npm test && npm run eval` once on a machine with the model: the recognition
+   work from 2026-09-24 hasn't been measured with the real model yet (see `research/recognition-analysis.md`).
+4. Try chat capture by hand once in real Chrome (Settings → Chat capture → Turn on → accept the prompt).
+   R1–R3, the optional Gemini Nano read and R5 chat capture are built.
+5. Collect and anonymize real example lines (§4 protocol, `npm run prepare-examples`) during pilot setup,
+   then import them.
 6. Pilot (§3).
 7. Recognition R4 on real data; SME review of the most-used derived pairings (from pilot data).
 8. R5 per client; Phase 4 only after legal sign-off.

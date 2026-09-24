@@ -1,8 +1,21 @@
-import type { CustomerId } from "./types";
+import modelConfig from "../data/model.json";
+import { detectCues, type CueHit } from "./cues";
+import type { CueFamily, CustomerId } from "./types";
 
-/** Must match scripts/embed.mjs — the index is invalid if these drift apart. */
-export const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
+// The embedding model, from src/data/model.json (shared with scripts/fetch-model.mjs and scripts/embed.mjs).
+// Changing it means: npm run setup-model, npm run embed, then npm test / npm run eval. See
+// docs/research/recognition-analysis.md ("Changing the model").
+export const MODEL_ID: string = modelConfig.id;
+export const MODEL_DTYPE = modelConfig.dtype as "q8" | "fp32" | "fp16" | "q4";
+/** Some models expect a fixed prefix on every input (e5: "query: "). */
+export const MODEL_PREFIX: string = modelConfig.prefix;
 export const EMBED_OPTIONS = { pooling: "mean", normalize: true } as const;
+
+/** Where transformers.js looks for the ONNX weights for this dtype (see ONNX_FILE in scripts/fetch-model.mjs). */
+export const MODEL_FILE = `onnx/${{ fp32: "model", fp16: "model_fp16", q8: "model_quantized", q4: "model_q4" }[MODEL_DTYPE]}.onnx`;
+
+/** The text as the model should see it. */
+export const modelInput = (text: string) => MODEL_PREFIX + text;
 
 export interface EmbeddingIndex {
   model: string;
@@ -12,9 +25,9 @@ export interface EmbeddingIndex {
 
 export interface Suggestion {
   customerId: CustomerId;
-  /** Mean cosine similarity of this archetype's closest examples. */
+  /** Probability (0–1) after combining the embedding and keyword cues. */
   score: number;
-  /** The single closest example line for this archetype. */
+  /** The single closest example line for this archetype ("" when keyword-only). */
   example: string;
 }
 
@@ -22,12 +35,38 @@ export interface Classification {
   ranked: Suggestion[];
   /** Clear winner vs. a close call between the top two. */
   confidence: "clear" | "close" | "none";
+  /** Keyword cues found in the text, strongest first (the "why" shown to the agent). */
+  cues: CueHit[];
+  /** True when no embedding was available and only keyword cues were used. */
+  keywordOnly: boolean;
+  /** Per-type log-probabilities, for combining lines across a call (see callMemory.ts). */
+  logProbs: Record<CustomerId, number>;
+  /** False when the line is unlike every example and has no cues: it carries no evidence. */
+  signal: boolean;
 }
 
-// Tuned against tests/fixtures/heldOutUtterances.json.
-const TOP_K = 3;
+export interface ClassifyOptions {
+  /** The typed line; enables keyword cues. */
+  text?: string;
+  cues?: CueFamily[];
+  /** Override the model's calibrated temperature (used when benchmarking other models). */
+  temperature?: number;
+}
+
+// Calibrated by leave-one-out on the example vectors (scripts/eval.mjs; docs/research/recognition-analysis.md).
+// Each type is represented by the normalized mean of its examples (centroid), which beat nearest-neighbour
+// voting 86% vs 74% leave-one-out. Logit = cosine / TEMPERATURE + CUE_WEIGHT × cue score.
+// The temperature depends on the model's cosine spread, so it lives in model.json
+// (`npm run benchmark-models` fits it for other models).
+const TEMPERATURE: number = modelConfig.temperature;
+const CUE_WEIGHT = 1;
+/** Keyword-only mode (model not loaded): cues are the only evidence, so they count a bit more. */
+const CUE_ONLY_WEIGHT = 1.5;
+/** Below this cosine the line isn't like any example; without cues that's "none". */
 const MIN_SCORE = 0.25;
-const CLEAR_MARGIN = 0.04;
+/** In leave-one-out, every suggestion at or above this probability was right (60/60). */
+const CLEAR_PROB = 0.7;
+const MIN_PROB = 0.4;
 
 /** Vectors are L2-normalized, so the dot product is the cosine similarity. */
 export function dot(a: ArrayLike<number>, b: ArrayLike<number>): number {
@@ -36,29 +75,88 @@ export function dot(a: ArrayLike<number>, b: ArrayLike<number>): number {
   return s;
 }
 
-export function classify(query: ArrayLike<number>, index: EmbeddingIndex): Classification {
-  const byCustomer = new Map<CustomerId, Array<{ sim: number; text: string }>>();
+const centroidCache = new WeakMap<EmbeddingIndex, Map<CustomerId, number[]>>();
+
+/** Normalized mean vector of each type's examples. */
+export function centroids(index: EmbeddingIndex): Map<CustomerId, number[]> {
+  let c = centroidCache.get(index);
+  if (c) return c;
+  c = new Map();
   for (const item of index.items) {
-    const list = byCustomer.get(item.customerId) ?? [];
-    list.push({ sim: dot(query, item.vector), text: item.text });
-    byCustomer.set(item.customerId, list);
+    const v = c.get(item.customerId) ?? new Array(item.vector.length).fill(0);
+    item.vector.forEach((x, i) => (v[i] += x));
+    c.set(item.customerId, v);
   }
+  for (const v of c.values()) {
+    const n = Math.hypot(...v) || 1;
+    v.forEach((x, i) => (v[i] = x / n));
+  }
+  centroidCache.set(index, c);
+  return c;
+}
 
-  const ranked: Suggestion[] = [...byCustomer].map(([customerId, sims]) => {
-    sims.sort((a, b) => b.sim - a.sim);
-    const top = sims.slice(0, TOP_K);
-    return {
-      customerId,
-      score: top.reduce((s, x) => s + x.sim, 0) / top.length,
-      example: top[0].text,
-    };
-  });
-  ranked.sort((a, b) => b.score - a.score);
+function logSoftmax(z: number[]): number[] {
+  const m = Math.max(...z);
+  const lse = m + Math.log(z.reduce((s, v) => s + Math.exp(v - m), 0));
+  return z.map((v) => v - lse);
+}
 
+/** Turn per-type log-probabilities into a ranked classification. */
+export function rank(
+  logProbs: Record<CustomerId, number>,
+  opts: { examples?: Partial<Record<CustomerId, string>>; cues?: CueHit[]; keywordOnly?: boolean; noSignal?: boolean } = {},
+): Classification {
+  const ranked = (Object.entries(logProbs) as Array<[CustomerId, number]>)
+    .map(([customerId, lp]) => ({ customerId, score: Math.exp(lp), example: opts.examples?.[customerId] ?? "" }))
+    .sort((a, b) => b.score - a.score);
   const [first, second] = ranked;
   let confidence: Classification["confidence"] = "none";
-  if (first && first.score >= MIN_SCORE) {
-    confidence = !second || first.score - second.score >= CLEAR_MARGIN ? "clear" : "close";
+  if (first && !opts.noSignal && first.score >= MIN_PROB) {
+    confidence = !second || first.score >= CLEAR_PROB ? "clear" : "close";
   }
-  return { ranked, confidence };
+  return { ranked, confidence, cues: opts.cues ?? [], keywordOnly: Boolean(opts.keywordOnly), logProbs, signal: !opts.noSignal };
+}
+
+/**
+ * Classify one line. `query` is its embedding, or null when the model isn't available (keyword-only).
+ * Scores: centroid cosine (temperature-scaled) plus keyword cues, as a softmax over the index's types.
+ */
+export function classify(
+  query: ArrayLike<number> | null,
+  index: EmbeddingIndex,
+  { text, cues: families, temperature = TEMPERATURE }: ClassifyOptions = {},
+): Classification {
+  const cents = centroids(index);
+  const types = [...cents.keys()];
+  const found = text && families ? detectCues(text, families) : { scores: {}, hits: [] };
+  const cue = (t: CustomerId) => found.scores[t] ?? 0;
+
+  if (!query) {
+    const lp = logSoftmax(types.map((t) => CUE_ONLY_WEIGHT * cue(t)));
+    return rank(Object.fromEntries(types.map((t, i) => [t, lp[i]])) as Record<CustomerId, number>, {
+      cues: found.hits,
+      keywordOnly: true,
+      noSignal: found.hits.length === 0,
+    });
+  }
+
+  const cos = types.map((t) => dot(query, cents.get(t)!));
+  const lp = logSoftmax(types.map((t, i) => cos[i] / temperature + CUE_WEIGHT * cue(t)));
+
+  // The closest example per type, shown as a tooltip ("Similar to: …").
+  const examples: Partial<Record<CustomerId, string>> = {};
+  const best: Partial<Record<CustomerId, number>> = {};
+  for (const item of index.items) {
+    const s = dot(query, item.vector);
+    if (s > (best[item.customerId] ?? -Infinity)) {
+      best[item.customerId] = s;
+      examples[item.customerId] = item.text;
+    }
+  }
+
+  return rank(Object.fromEntries(types.map((t, i) => [t, lp[i]])) as Record<CustomerId, number>, {
+    examples,
+    cues: found.hits,
+    noSignal: Math.max(...cos) < MIN_SCORE && found.hits.length === 0,
+  });
 }

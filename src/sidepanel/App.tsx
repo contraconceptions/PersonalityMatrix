@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { nextDemo, prevDemo, scenarios, type DemoState } from "../lib/demo";
 import { getAgent, resolveGuidance } from "../lib/matrix";
+import { CALM, type Mood, type MoodTrend } from "../lib/mood";
 import { shortcutFor } from "../lib/shortcuts";
 import { loadAgentId, saveAgentId } from "../lib/storage";
 import type { AgentId, CustomerId } from "../lib/types";
-import { logEvent, type SelectSource } from "../lib/usage";
+import { logEvent, type SelectSource, type SuggestionAtPick } from "../lib/usage";
 import AgentSetup from "./components/AgentSetup";
 import CustomerQuickId from "./components/CustomerQuickId";
 import DemoBar from "./components/DemoBar";
@@ -18,9 +19,10 @@ export default function App() {
   const [loaded, setLoaded] = useState(false);
   const [agentId, setAgentId] = useState<AgentId | null>(null);
   const [customerId, setCustomerId] = useState<CustomerId | null>(null);
-  const [suggestedId, setSuggestedId] = useState<CustomerId | null>(null);
+  const [suggestion, setSuggestion] = useState<SuggestionAtPick | null>(null);
   const [view, setView] = useState<"main" | "settings">("main");
   const [demo, setDemo] = useState<DemoState | null>(null);
+  const [mood, setMood] = useState<{ mood: Mood; trend: MoodTrend | null }>({ mood: CALM, trend: null });
 
   const scenario = demo ? scenarios[demo.index] : null;
   // In a demo the scenario's agent is used for display only; the saved agent is untouched.
@@ -40,7 +42,8 @@ export default function App() {
 
   const selectCustomer = (id: CustomerId | null, source: SelectSource) => {
     setCustomerId(id);
-    if (id && activeAgentId && !demo) void logEvent({ type: "select", agentId: activeAgentId, customerId: id, source });
+    // With the suggestion that was showing (if any), so Settings → Usage can show how often agents agree with it.
+    if (id && activeAgentId && !demo) void logEvent({ type: "select", agentId: activeAgentId, customerId: id, source, ...suggestion });
   };
 
   const stepDemo = (dir: 1 | -1) =>
@@ -94,9 +97,14 @@ export default function App() {
       ) : null}
 
       <header className="app-header">
-        <div>
-          <span className="eyebrow">You are</span>
-          <strong>{agent.name}</strong>
+        <div className="who">
+          <span className="avatar" aria-hidden="true">
+            {agent.name.replace(/^The /, "").charAt(0)}
+          </span>
+          <div>
+            <span className="eyebrow">You are</span>
+            <strong>{agent.name}</strong>
+          </div>
         </div>
         {!demo && (
           <nav className="header-links">
@@ -113,23 +121,29 @@ export default function App() {
       <DescribeCustomer
         key={demo ? `demo-${demo.index}` : "live"}
         presetText={scenario?.customerLine}
-        onSuggest={setSuggestedId}
+        allowAi={!demo}
+        allowCapture={!demo}
+        onNewCall={() => setCustomerId(null)}
+        onMood={(m, trend) => setMood({ mood: m, trend })}
+        onSuggest={setSuggestion}
         onAccept={(id) => (demo ? setDemo({ index: demo.index, beat: "guide" }) : selectCustomer(id, "suggestion"))}
       />
 
-      <CustomerQuickId selected={customerId} suggested={suggestedId} onSelect={(id) => selectCustomer(id, "click")} />
+      <CustomerQuickId selected={customerId} suggested={suggestion?.suggested ?? null} onSelect={(id) => selectCustomer(id, "click")} />
 
       {guidance ? (
         <MatrixOutput
           guidance={guidance}
+          mood={mood.mood.id === "calm" ? null : { state: content.moods.find((m) => m.id === mood.mood.id)!, trend: mood.trend }}
           onReset={() => setCustomerId(null)}
           onCopy={(phrase) =>
             !demo && customerId && void logEvent({ type: "copy", agentId: activeAgentId, customerId, phrase })
           }
         />
       ) : (
-        <p className="hint">
-          Pick the customer type you're hearing, or press <kbd>1</kbd>–<kbd>6</kbd>.
+        <p className="hint empty">
+          Pick the customer type you're hearing, or press <kbd>1</kbd>–<kbd>6</kbd>. Guidance for your pairing
+          appears here.
         </p>
       )}
     </main>

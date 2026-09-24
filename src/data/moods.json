@@ -1,0 +1,128 @@
+[
+  {
+    "id": "anxious",
+    "name": "Anxious",
+    "tip": "Slow down and lower your pace. Name the worry, then give one small, certain next step.",
+    "phrasesToUse": [
+      "I can hear this is really worrying. We'll go through it together, one step at a time.",
+      "You did the right thing calling. Here's what I'm doing right now.",
+      "Let me check exactly where things stand, so we know what's real."
+    ],
+    "cues": [
+      {
+        "why": "fear or worry",
+        "weight": 1.3,
+        "negatable": true,
+        "patterns": [
+          "\\b(scared|terrified|afraid|frightened|worried|nervous|anxious|panick(ing|ed)|freaking out|overwhelmed|stressed( out)?|desperate|can'?t sleep|in tears|crying)\\b"
+        ]
+      },
+      {
+        "why": "helplessness",
+        "weight": 1.0,
+        "patterns": [
+          "\\b(i (don'?t|do not) know what to do|nowhere (else )?to turn|please help|i can'?t (deal|cope|handle)|what am i (going to|gonna) do|no idea what (to do|happens|i'?m (going to|gonna) do))\\b"
+        ]
+      },
+      {
+        "why": "what-if worry",
+        "weight": 0.7,
+        "patterns": [
+          "\\b(what (happens|if)[^.?!]{0,40}(lose|cut|shut|late|charged|evict|cancel\\w*|miss)|is it going to be (ok|okay|alright))\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "frustrated",
+    "name": "Frustrated",
+    "tip": "Acknowledge the problem and their effort before any facts or policy. Don't explain why it happened yet.",
+    "phrasesToUse": [
+      "That's a fair thing to be frustrated about.",
+      "You shouldn't have had to call about this again.",
+      "Let me make sure I have this right, so you don't have to repeat it."
+    ],
+    "cues": [
+      {
+        "why": "frustration",
+        "weight": 1.2,
+        "negatable": true,
+        "patterns": [
+          "\\b(frustrat\\w*|annoy\\w*|irritat\\w*|fed up|sick (and tired )?of|tired of|had enough)\\b"
+        ]
+      },
+      {
+        "why": "repeated problem",
+        "weight": 1.0,
+        "patterns": [
+          "\\b(second|third|fourth|fifth|\\d+(st|nd|rd|th)) (time|call|month|week)\\b",
+          "\\b(again and again|in a row|still (not|broken|hasn'?t|haven'?t|isn'?t)|keeps? (happening|breaking|dropping|charging))\\b"
+        ]
+      },
+      {
+        "why": "long wait",
+        "weight": 0.8,
+        "patterns": [
+          "\\b(on hold for|been waiting|waited (for )?(an hour|hours|days|weeks|\\d+)|(an|one|two|\\d+) hours? on (the phone|hold))\\b"
+        ]
+      },
+      {
+        "why": "judgment words",
+        "weight": 0.9,
+        "negatable": true,
+        "patterns": [
+          "\\b(ridiculous|unacceptable|terrible|useless|a joke|pathetic|incompetent|outrageous|absurd)\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "escalating",
+    "name": "Escalating",
+    "tip": "Lower your volume and pace. Don't defend or quote policy. Say what you'll do and by when; offer a supervisor before they ask twice.",
+    "phrasesToUse": [
+      "I hear you, and I want to fix this. Here's what I can do right now.",
+      "You're right to expect better. I'm taking ownership of this.",
+      "If I can't resolve it on this call, I'll bring in my supervisor myself."
+    ],
+    "cues": [
+      {
+        "why": "escalation demand",
+        "weight": 1.3,
+        "patterns": [
+          "\\b(supervisor|manager|someone in charge|(file|filing|make) a complaint|lawyer|attorney|sue you|bbb|better business bureau|regulator|social media|leave a review)\\b"
+        ]
+      },
+      {
+        "why": "threat to leave",
+        "weight": 1.0,
+        "patterns": [
+          "\\b((i'?m|i will|i'?ll|going to|gonna) (cancel|leave|switch|take my business)\\w*|close my account|i'?m done|last chance|or else)\\b"
+        ]
+      },
+      {
+        "why": "swearing",
+        "weight": 1.2,
+        "patterns": [
+          "\\b(damn\\w*|hell|crap|bs|bullshit|wtf|pissed( off)?|shit\\w*|fuck\\w*|f\\*+\\w*|s\\*+t)\\b"
+        ]
+      },
+      {
+        "why": "urgency",
+        "weight": 0.6,
+        "patterns": [
+          "\\b(right now|immediately|today or|this instant)\\b",
+          "!!"
+        ]
+      },
+      {
+        "why": "agent note",
+        "weight": 1.3,
+        "negatable": true,
+        "patterns": [
+          "\\b(yelling|shouting|screaming|swearing|cursing|abusive|hostile|threaten(ing|ed)|irate|furious|escalat(ing|ed))\\b"
+        ]
+      }
+    ]
+  }
+]

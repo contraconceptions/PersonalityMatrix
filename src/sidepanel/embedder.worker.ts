@@ -3,7 +3,7 @@
 // no remote models, no CDN-hosted WASM (MV3 forbids remote code, and the panel must work offline).
 import { env, pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import ortWasmUrl from "onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url";
-import { EMBED_OPTIONS, MODEL_ID } from "../lib/similarity";
+import { EMBED_OPTIONS, MODEL_DTYPE, MODEL_ID, modelInput } from "../lib/similarity";
 
 // Guard: this worker may only fetch files packaged with the extension. Nothing the agent
 // types can leave the device, and any accidental CDN/Hub fallback fails loudly.
@@ -40,10 +40,10 @@ const post = (msg: WorkerResponse) => self.postMessage(msg);
 // (not on the agent's first real input) and the first real suggestion is fast.
 const ready: Promise<FeatureExtractionPipeline> = (async () => {
   const extractor = (await pipeline("feature-extraction", MODEL_ID, {
-    dtype: "q8",
+    dtype: MODEL_DTYPE,
     device: "wasm",
   })) as FeatureExtractionPipeline;
-  await extractor("warm up", { ...EMBED_OPTIONS });
+  await extractor(modelInput("warm up"), { ...EMBED_OPTIONS });
   return extractor;
 })();
 
@@ -56,7 +56,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const { id, text } = e.data;
   try {
     const extractor = await ready;
-    const out = await extractor(text, { ...EMBED_OPTIONS });
+    const out = await extractor(modelInput(text), { ...EMBED_OPTIONS });
     post({ type: "result", id, vector: Array.from(out.data as Float32Array) });
   } catch (err) {
     post({ type: "error", message: String(err) });

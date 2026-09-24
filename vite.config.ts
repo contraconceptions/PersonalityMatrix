@@ -2,7 +2,8 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
 
-// Two entry points: the side panel page and the MV3 service worker.
+// Three entry points: the side panel page, the MV3 service worker and the chat-capture content script
+// (the last two get fixed names, which the manifest and chrome.scripting refer to).
 // public/manifest.json is copied as-is into dist/.
 export default defineConfig({
   plugins: [react()],
@@ -13,10 +14,11 @@ export default defineConfig({
       input: {
         sidepanel: resolve(__dirname, "sidepanel.html"),
         background: resolve(__dirname, "src/background/index.ts"),
+        capture: resolve(__dirname, "src/content/capture.ts"),
       },
       output: {
         entryFileNames: (chunk) =>
-          chunk.name === "background" ? "background.js" : "assets/[name]-[hash].js",
+          chunk.name === "background" || chunk.name === "capture" ? `${chunk.name}.js` : "assets/[name]-[hash].js",
       },
     },
   },

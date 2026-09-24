@@ -4,16 +4,16 @@
 import { env, pipeline } from "@huggingface/transformers";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const MODEL_ID = "Xenova/all-MiniLM-L6-v2"; // keep in sync with src/lib/similarity.ts
+const { id: MODEL_ID, dtype, prefix } = JSON.parse(readFileSync("src/data/model.json", "utf8")); // same file the app reads
 env.allowRemoteModels = false;
 env.localModelPath = "public/models/";
 
 const examples = JSON.parse(readFileSync("src/data/customerExamples.json", "utf8"));
-const extractor = await pipeline("feature-extraction", MODEL_ID, { dtype: "q8" });
+const extractor = await pipeline("feature-extraction", MODEL_ID, { dtype });
 
 const items = [];
 for (const [customerId, lines] of Object.entries(examples)) {
-  const out = await extractor(lines, { pooling: "mean", normalize: true });
+  const out = await extractor(lines.map((l) => prefix + l), { pooling: "mean", normalize: true });
   out.tolist().forEach((vec, i) => {
     items.push({ customerId, text: lines[i], vector: vec.map((x) => Math.round(x * 1e5) / 1e5) });
   });
