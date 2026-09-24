@@ -53,6 +53,7 @@ are authored now; the fallback only matters if a node is removed.
 - [x] `npm run embed` pre-computes 72 example-utterance embeddings → `src/data/exampleEmbeddings.json` (238 KB)
 - [x] Inference in a Web Worker (~0.5 s model load, ~10 ms per suggestion)
 - [ ] Grow `customerExamples.json` with real (anonymized) client call lines, then `npm run embed`
+- [ ] Recognition roadmap R1–R5 (measurement, style vs state, trained classifier + "why", better model, auto-capture): see `NEXT-STEPS.md` §8
 
 ### Phase 3 — Admin & analytics (local)
 - [x] Demo mode: 5 scripted calls (`src/data/demoScenarios.json`) played through the real suggestion model, with a coaching note per call; → / ← / Esc; never saves the agent or logs usage. Start from onboarding ("Watch a demo") or Settings

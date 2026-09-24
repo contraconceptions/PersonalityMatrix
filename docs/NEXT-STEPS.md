@@ -18,6 +18,7 @@ this is the working detail behind the unchecked boxes.
 | Phase 3: demo, brand voice, import/export, usage log | Done; Settings is **not locked** (see §5) |
 | Phase 4: voice emotion | Not started, needs legal review first (see §6) |
 | Tests | 48 passing (`npm test`), including real-model accuracy checks |
+| Real-extension test (§2) | Done 2026-09-23: 21/21 automated checks pass as an unpacked extension; manual side-panel check pending |
 | Client build | `npm run package` → `release/personality-matrix-0.1.0.zip` (~23 MB zipped, ~50 MB unpacked) |
 
 ### Get running on a fresh machine
@@ -44,6 +45,11 @@ npm run package       # build + zip for clients
   misleading. The demo typing effect is time-based for this reason.
 - **Clipboard tests overwrite the developer's real clipboard.** Save and restore it.
 - `npm run embed` must be re-run after editing `src/data/customerExamples.json`. A test fails if you forget.
+- **Branded Chrome (137+) ignores `--load-extension`.** For automated extension tests use Playwright's
+  Chromium (`channel: "chromium"`, headless works) with `--load-extension`, and open
+  `chrome-extension://<id>/sidepanel.html` in a tab. Playwright can't click the toolbar icon.
+- **Headless Chromium has its own clipboard**, separate from the OS one. Verify copy by pasting back into a field.
+- **Don't zip with PowerShell 5.1 `Compress-Archive`**: it writes backslash paths. `package.mjs` uses Windows' bsdtar.
 
 ---
 
@@ -64,9 +70,16 @@ specific to that environment:
 | Downloads | Export JSON/CSV save correctly from the side panel |
 | File import | The file picker opens from the side panel |
 
-**Steps:** `npm run package`, then unzip, then `chrome://extensions` → Developer mode → Load unpacked. Open the
-panel, right-click → Inspect, and walk through the list above. Fix anything that fails before the pilot.
-Estimate: half a day, including fixes.
+**Status (2026-09-23):** automated run done with Playwright Chromium against the unzipped release: every row above
+passes, plus a browser restart and fully offline suggestions (≈0.8 s cold). There were no console, CSP or worker errors.
+It found and fixed two bugs:
+- The release zip had a `dist\` wrapper folder and backslash paths (`package.mjs` now uses bsdtar; entries at root).
+- Pressing Enter right after pasting accepted the *previous* line's suggestion (`DescribeCustomer` now classifies
+  the current text on Enter if the shown suggestion is stale).
+
+**Still manual (a few minutes in real Chrome):** `chrome://extensions` → Developer mode → Load unpacked (the
+unzipped folder). Click the toolbar icon and confirm the panel opens. Open a second window and confirm its panel is
+independent. Then type a line, copy a phrase and paste it elsewhere to confirm the OS clipboard.
 
 ---
 
@@ -200,11 +213,90 @@ valence → Demanding or Distressed). It would never auto-select, and the agent 
 
 ---
 
+## 8. Recognition roadmap (planned 2026-09-23, not started)
+
+**How it works today:** `src/lib/similarity.ts` embeds one typed line with all-MiniLM-L6-v2 and compares it
+with 72 synthetic example lines (12 per type). The score for a type is the mean of its 3 closest examples.
+Each line is classified on its own, with no memory of earlier lines. This works well on clear-cut demo lines.
+Real calls are messier, and the example lines were written by us, not by customers.
+
+Work in this order. R1 and R2 need no client data and can start any time. R4 and parts of R5 depend on
+the pilot (§3) and real example lines (§4).
+
+### R1. Measure first (small, about 1 day)
+Nothing below can be shown to be an improvement without a yardstick.
+- **Evaluation harness:** extend `tests/semantic.test.ts` (or a `npm run eval` script) to print per-type
+  precision/recall, a confusion matrix ("Hesitant → Distressed 30%") and a confidence calibration check
+  (does "clear" actually mean right most of the time?). Grow the held-out set as real lines arrive.
+- **Correction logging, no text:** when an agent picks a different type than the one suggested, log only
+  `{ suggested, chosen, confidence }` to the usage log. Never log the typed text, and never log embedding vectors
+  (embeddings can partially leak the original text). Add a "suggestion accuracy" line and a confusion
+  table to Settings → Usage and the CSV export. A pilot then shows exactly where recognition is weak.
+- Tests: logging shape (no text fields), summary math, CSV columns.
+
+### R2. Separate style from state (medium, about 2–3 days; biggest conceptual gain)
+The six types currently mix two ideas the research treats separately. **Style** is the stable Process
+Communication Model personality base, which holds for the whole call. **State** is the momentary
+Transactional Analysis emotional state, which shifts line by line.
+- **Style builds up over the call:** keep the lines entered this call (in memory only, cleared with
+  Esc, Clear or a new call). Combine their per-type scores with recency weighting (e.g. exponential decay)
+  so style evidence builds across the call instead of flipping on every line. Add a "New call" action to reset.
+- **State per line:** a second, lighter signal for the latest line: calm / frustrated / escalating / anxious.
+  Start with an escalation-intensity score from the embedding plus lexical cues (see R3). A small on-device
+  sentiment model is an option if it earns its size (benchmark first).
+- **UI (keep it uncluttered):** one small escalation meter next to the suggestion, plus a trend hint when
+  state changes ("Demanding → calming down"), which tells the agent their approach is working.
+- **Guidance:** state adjusts guidance within the chosen pairing. For example, when escalating, surface the
+  de-escalation phrases (empathy bridge, assertive optioning) first, even if the base style is Analytical.
+  Needs a small content addition: state-specific phrase sets in the content file (importable like the rest).
+- Tests: accumulation math, reset behavior, state thresholds on fixture lines.
+
+### R3. Smarter decision step, plus "why" (medium, about 2 days)
+- **Trained classifier:** train a small classifier (e.g. multinomial logistic regression, 6 × 384 weights)
+  on the example embeddings at build time in `scripts/embed.mjs` and ship the weights as JSON (a few KB).
+  Compare it with the current nearest-neighbor approach using R1's harness and keep whichever wins. Expected: better
+  calibrated confidence and cleaner separation of overlapping types (Hesitant vs Distressed).
+- **Lexical cues** combined with the model score:
+  absolutes ("always", "never", "every time"), escalation demands ("supervisor", "manager", "cancel", "complaint"),
+  hedges ("not sure", "maybe", "I don't know which"), anxiety words ("scared", "worried", "panicking"),
+  number- or policy-heavy questions (Analytical), story markers and long tangents (Expressive), agreement or
+  readiness (Cooperative). Keep the cue lists in a data file so clients can tune them via import.
+- **"Why" highlights:** show the 1–3 words that drove the suggestion in the tooltip or under the suggestion
+  ("never", "supervisor" → Demanding). This builds agent trust and teaches the cues.
+- Tests: cue detection, combined scoring, harness comparison recorded in the commit message.
+
+### R4. Better model, once real data exists (medium to large, 2–5 days)
+- **Benchmark small embedding models** of similar size (bge-small-en-v1.5, e5-small-v2, gte-small; roughly
+  30–35 MB quantized, to be confirmed) with R1's harness on **real** held-out lines. Swap only if it clearly wins.
+  Re-check the ONNX Runtime and transformers.js gotchas in §1 when changing models.
+- **Train on the client's data (SetFit):** once there are about 10–20+ labeled real lines per type, fine-tune a
+  small sentence-transformer with SetFit (offline, Python), export it to ONNX and ship it the same way as today.
+  This is usually the largest accuracy jump, but it isn't worth doing on synthetic data.
+- Keep a per-client model or example set optional. The default build stays generic.
+
+### R5. Remove the typing (larger, per client; biggest usability gain)
+- **Chat / email teams:** a content script reads new customer messages from the client's CRM or chat page and
+  feeds them to the pipeline automatically (the agent still confirms the suggestion). Needs per-client DOM
+  selectors, host permissions scoped to that site only, and a clear on/off control. Estimate: 2–4 days per
+  platform.
+- **Phone teams:** on-device speech-to-text (e.g. a small Whisper model via transformers.js) turns the
+  customer's audio into lines for the same pipeline. It falls under **the same legal gate as Phase 4 (§6)**
+  and shares its audio-capture work, so plan the two together.
+
+### Privacy rules for all of the above
+- Customer text and audio stay in memory on the device and are never stored or sent. The worker's fetch guard stays.
+- Logs contain only type ids, sources, confidence and copied (agent-side) phrases.
+- Any collection of real lines for training follows the §4 anonymization protocol, done by or with the client.
+
+---
+
 ## Suggested order when resuming
 
-1. Real-extension test (§2): it may surface environment issues.
+1. Finish the manual side-panel check (§2); the automated extension test is done.
 2. Settings PIN (§5, option A), if the pilot client wants it.
-3. Collect and anonymize real example lines (§4 protocol) during pilot setup.
-4. Pilot (§3).
-5. SME review of the most-used derived pairings (from pilot data).
-6. Phase 4 only after legal sign-off.
+3. Recognition R1 (measurement + correction logging), so the pilot produces accuracy data.
+4. Recognition R2 + R3 (style vs state, trained classifier, "why" highlights), optional before the pilot.
+5. Collect and anonymize real example lines (§4 protocol) during pilot setup.
+6. Pilot (§3).
+7. Recognition R4 on real data; SME review of the most-used derived pairings (from pilot data).
+8. R5 per client; Phase 4 only after legal sign-off.
