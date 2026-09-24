@@ -37,6 +37,15 @@
     ]
   },
   {
+    "customerId": "analytical",
+    "why": "calm fact-finding",
+    "weight": 1.2,
+    "patterns": [
+      "\\b(i'?m|i am) not (upset|angry|mad|complaining|worried|trying to (argue|be difficult))\\b",
+      "\\bjust (want|need|would like) to (understand|know|see|check) (how|why|what|which|when|where|exactly)\\b"
+    ]
+  },
+  {
     "customerId": "distressed",
     "why": "fear or anxiety",
     "weight": 1.4,
@@ -70,7 +79,8 @@
     "weight": 0.9,
     "patterns": [
       "\\b(rent|evict\\w*|shut ?off|cut (the \\w+ )?off|groceries|medication|hospital|passed away|funeral)\\b",
-      "\\b(lose (everything|my (house|home|job))|kids'? (coverage|food|school)|bounce[sd]?)\\b"
+      "\\b(lose (everything|my (house|home|job))|kids'? (coverage|food|school)|bounce[sd]?)\\b",
+      "\\b(lost my job|laid off|out of work|can'?t afford|behind on (my )?(rent|bills|payments|mortgage)|no money (left|until))\\b"
     ]
   },
   {
