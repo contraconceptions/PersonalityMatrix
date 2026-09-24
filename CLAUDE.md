@@ -24,6 +24,7 @@ npx vitest run -t "all 36 pairs"           # single test by name
 npm run typecheck     # tsc --noEmit
 npm run build         # fetch model + typecheck + vite build → dist/ (load unpacked in chrome://extensions)
 npm run embed         # REQUIRED after editing src/data/customerExamples.json (a test fails otherwise)
+npm run eval          # recognition yardstick (see docs/research/recognition-analysis.md); Node 22.18+
 npm run package       # build + zip → release/personality-matrix-<version from public/manifest.json>.zip
 ```
 

@@ -229,7 +229,15 @@ Real calls are messier, and the example lines were written by us, not by custome
 Work in this order. R1 and R2 need no client data and can start any time. R4 and parts of R5 depend on
 the pilot (§3) and real example lines (§4).
 
-### R1. Measure first (small, about 1 day)
+**Analysis (2026-09-24):** [`research/recognition-analysis.md`](research/recognition-analysis.md) measures
+today's matcher, maps trigger words to the research, compares approaches (including Chrome's built-in
+Gemini Nano and bundled LLMs) and recommends an order of work.
+
+### R1. Measure first (small, about 1 day) — harness done
+**Done:** `npm run eval` (leave-one-out classifier comparison; held-out + challenge scoring with a
+confusion table when the model is present) and `tests/fixtures/challengeUtterances.json`.
+First result: the runtime top-3 rule gets 74% top-1 leave-one-out vs 86% for a class centroid.
+Still open: the correction logging below.
 Nothing below can be shown to be an improvement without a yardstick.
 - **Evaluation harness:** extend `tests/semantic.test.ts` (or a `npm run eval` script) to print per-type
   precision/recall, a confusion matrix ("Hesitant → Distressed 30%") and a confidence calibration check

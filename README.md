@@ -19,7 +19,7 @@ the recognition roadmap and voice emotion (Phase 4) are open.
 |---|---|
 | [`docs/NEXT-STEPS.md`](docs/NEXT-STEPS.md) | **Where to resume:** state, gotchas, detailed plans for every open item |
 | [`docs/PLAN.md`](docs/PLAN.md) | Decisions, guidance model and the phase checklist |
-| [`docs/research/`](docs/research/) | Source research and how the 36 pairings were built |
+| [`docs/research/`](docs/research/) | Source research, how the 36 pairings were built, and the recognition analysis |
 | [`CLAUDE.md`](CLAUDE.md) | Architecture notes for coding agents |
 
 ## Develop
@@ -32,6 +32,7 @@ npm test           # 48 tests: data integrity, guidance, quiz, shortcuts, Phase 
 npm run typecheck  # tsc --noEmit
 npm run build      # type-check + build the extension into dist/ (~50 MB incl. model)
 npm run embed      # re-run after editing src/data/customerExamples.json
+npm run eval       # recognition yardstick: classifier comparison + held-out/challenge accuracy (Node 22.18+)
 npm run package    # build + zip to release/personality-matrix-<version>.zip for clients
 ```
 
